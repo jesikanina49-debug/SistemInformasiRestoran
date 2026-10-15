@@ -29,3 +29,178 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* Layout utama RESTO POS */
+.resto-body {
+    margin: 0;
+    background: #f8f7f1;
+    color: #183c3b;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.resto-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.resto-sidebar {
+    width: 250px;
+    min-width: 250px;
+    background: linear-gradient(180deg, #073e32, #052f27);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 15px;
+}
+
+.resto-brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    color: white;
+    text-decoration: none;
+    padding: 0 12px 35px;
+}
+
+.resto-brand > i {
+    font-size: 35px;
+}
+
+.resto-brand strong {
+    display: block;
+    font-size: 25px;
+    letter-spacing: 1px;
+}
+
+.resto-brand small {
+    display: block;
+    color: #c1d8ce;
+    font-size: 12px;
+}
+
+.resto-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.resto-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 10px;
+    color: #f5fbf7;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.resto-nav-link i {
+    font-size: 21px;
+    width: 24px;
+}
+
+.resto-nav-link:hover,
+.resto-nav-link:focus {
+    color: white;
+    background: #176c53;
+}
+
+.resto-sidebar-bottom {
+    margin-top: auto;
+    padding: 40px 10px 15px;
+    text-align: center;
+    color: #d5e7dc;
+}
+
+.resto-sidebar-bottom i {
+    font-size: 38px;
+}
+
+.resto-sidebar-bottom p {
+    margin: 8px 0 0;
+    font-style: italic;
+    line-height: 1.6;
+}
+
+.resto-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.resto-topbar {
+    min-height: 65px;
+    padding: 12px 28px;
+    background: #fffefa;
+    border-bottom: 1px solid #e5e6df;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.resto-topbar-title {
+    font-weight: 600;
+    font-size: 17px;
+}
+
+.resto-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.resto-user i {
+    font-size: 30px;
+}
+
+.resto-content {
+    flex: 1;
+    padding: 28px;
+}
+
+.resto-footer {
+    padding: 18px 28px;
+    border-top: 1px solid #e3e5df;
+    color: #687b76;
+    background: #fffefa;
+}
+
+@media (max-width: 768px) {
+    .resto-sidebar {
+        width: 75px;
+        min-width: 75px;
+        padding: 20px 8px;
+    }
+
+    .resto-brand {
+        justify-content: center;
+        padding: 0 0 30px;
+    }
+
+    .resto-brand span,
+    .resto-nav-link span,
+    .resto-sidebar-bottom p {
+        display: none;
+    }
+
+    .resto-nav-link {
+        justify-content: center;
+        padding: 14px 8px;
+    }
+
+    .resto-sidebar-bottom {
+        padding: 30px 0 10px;
+    }
+
+    .resto-content {
+        padding: 16px;
+    }
+
+    .resto-topbar {
+        padding: 12px 16px;
+    }
+}

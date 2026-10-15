@@ -1,43 +1,91 @@
 ﻿
 @{
-    ViewData["Title"] = "Beranda";
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="container py-5">
-    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
-        <h1 class="display-5 fw-bold">Sistem Informasi Restoran</h1>
-        <p class="fs-5">
-            Selamat datang di aplikasi kasir restoran.
-            Kelola menu, meja, pesanan, dan pembayaran dengan mudah.
+<div class="container-fluid">
+    <div class="mb-4">
+        <h2 class="fw-bold">Dashboard</h2>
+        <p class="text-secondary">
+            Selamat datang di RESTO POS.
+            Berikut ringkasan informasi restoran.
         </p>
     </div>
 
     <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <h5>Master Menu</h5>
-                    <p>Mengelola daftar makanan dan minuman.</p>
+                    <div class="text-success mb-3">
+                        <i class="bi bi-cup-hot fs-2"></i>
+                    </div>
+                    <p class="text-secondary mb-1">Total Menu</p>
+                    <h3 class="fw-bold">12</h3>
+                    <small class="text-secondary">
+                        Data contoh
+                    </small>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <h5>Pesanan Meja</h5>
-                    <p>Mencatat pesanan pelanggan berdasarkan meja.</p>
+                    <div class="text-primary mb-3">
+                        <i class="bi bi-shop fs-2"></i>
+                    </div>
+                    <p class="text-secondary mb-1">Total Meja</p>
+                    <h3 class="fw-bold">10</h3>
+                    <small class="text-secondary">
+                        Data contoh
+                    </small>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <h5>Pembayaran</h5>
-                    <p>Mengelola pembayaran dan struk transaksi.</p>
+                    <div class="text-warning mb-3">
+                        <i class="bi bi-receipt fs-2"></i>
+                    </div>
+                    <p class="text-secondary mb-1">
+                        Pesanan Hari Ini
+                    </p>
+                    <h3 class="fw-bold">8</h3>
+                    <small class="text-secondary">
+                        Data contoh
+                    </small>
                 </div>
             </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-danger mb-3">
+                        <i class="bi bi-wallet2 fs-2"></i>
+                    </div>
+                    <p class="text-secondary mb-1">
+                        Pendapatan Hari Ini
+                    </p>
+                    <h3 class="fw-bold">Rp450.000</h3>
+                    <small class="text-secondary">
+                        Data contoh
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3">Aktivitas Restoran</h5>
+            <p class="text-secondary mb-0">
+                Data pesanan dan pendapatan akan ditampilkan
+                di sini setelah fitur transaksi terhubung
+                ke database.
+            </p>
         </div>
     </div>
 </div>
