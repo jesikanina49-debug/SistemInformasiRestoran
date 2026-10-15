@@ -1,8 +1,43 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿
+@{
+    ViewData["Title"] = "Beranda";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container py-5">
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
+        <h1 class="display-5 fw-bold">Sistem Informasi Restoran</h1>
+        <p class="fs-5">
+            Selamat datang di aplikasi kasir restoran.
+            Kelola menu, meja, pesanan, dan pembayaran dengan mudah.
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5>Master Menu</h5>
+                    <p>Mengelola daftar makanan dan minuman.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5>Pesanan Meja</h5>
+                    <p>Mencatat pesanan pelanggan berdasarkan meja.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5>Pembayaran</h5>
+                    <p>Mengelola pembayaran dan struk transaksi.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
