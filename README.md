@@ -2,7 +2,7 @@
 
 ## 1. Informasi Proyek
 
-- **Nama Tim:** [Isi Nama Tim]
+- **Nama Tim:** [Kelompok 3]
 - **Judul Proyek:** Sistem Informasi Restoran Stateful (POS Kasir)
 - **Mata Kuliah:** Proyek Perangkat Lunak
 - **Teknologi:** C#, ASP.NET Core MVC, SQL Server, Entity Framework Core
@@ -17,7 +17,7 @@ Aplikasi ini menerapkan pengelolaan keranjang pesanan per meja menggunakan Sessi
 
 | No. | NIM | Nama | Peran |
 |---|---|---|---|
-| 1 | [NIM Anggota 1] | [Nama Anggota 1] | [Peran] |
+| 1 | [2457201039] | [Azhari fikri] | [Peran] |
 | 2 | [NIM Anggota 2] | [Nama Anggota 2] | [Peran] |
 | 3 | [NIM Anggota 3] | [Nama Anggota 3] | [Peran] |
 
