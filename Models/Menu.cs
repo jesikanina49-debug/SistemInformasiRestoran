@@ -23,6 +23,10 @@ namespace SistemInformasiRestoran.Models
 
         public bool StatusTersedia { get; set; } = true;
 
+        // Menyimpan nama file gambar menu
+        [StringLength(255)]
+        public string? Gambar { get; set; }
+
         [ForeignKey(nameof(IdKategori))]
         public Kategori? Kategori { get; set; }
     }

@@ -1,40 +1,51 @@
+
+/* =========================================
+   1. PENGATURAN DASAR DAN WARNA
+========================================= */
+
+:root {
+    --resto-green: #073e32;
+    --resto-green-dark: #052f27;
+    --resto-green-light: #176c53;
+    --resto-green-soft: #e3efe6;
+
+    --resto-cream: #f8f7f1;
+    --resto-white: #fffefa;
+    --resto-border: #e2e7df;
+
+    --resto-text: #183c3b;
+    --resto-muted: #687b76;
+
+    --resto-radius: 14px;
+    --resto-shadow: 0 4px 16px rgba(7, 62, 50, 0.07);
+    --resto-shadow-hover: 0 10px 24px rgba(7, 62, 50, 0.13);
+    --resto-transition: 0.22s ease;
+}
+
 html {
-  font-size: 14px;
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
+    scroll-behavior: smooth;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    html {
+        font-size: 16px;
+    }
 }
 
 body {
-  margin-bottom: 60px;
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--resto-text);
+    background: var(--resto-cream);
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
-}
-
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
-}
-
-/* Layout utama RESTO POS */
 .resto-body {
     margin: 0;
-    background: #f8f7f1;
-    color: #183c3b;
+    background: var(--resto-cream);
+    color: var(--resto-text);
     font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -43,10 +54,18 @@ body {
     min-height: 100vh;
 }
 
+/* =========================================
+   2. SIDEBAR HIJAU TUA
+========================================= */
+
 .resto-sidebar {
     width: 250px;
     min-width: 250px;
-    background: linear-gradient(180deg, #073e32, #052f27);
+    background: linear-gradient(
+        180deg,
+        var(--resto-green),
+        var(--resto-green-dark)
+    );
     color: white;
     display: flex;
     flex-direction: column;
@@ -64,6 +83,11 @@ body {
 
 .resto-brand > i {
     font-size: 35px;
+    transition: transform var(--resto-transition);
+}
+
+.resto-brand:hover > i {
+    transform: rotate(-8deg) scale(1.06);
 }
 
 .resto-brand strong {
@@ -78,6 +102,8 @@ body {
     font-size: 12px;
 }
 
+/* Menu sidebar: transparan saat normal */
+
 .resto-nav {
     display: flex;
     flex-direction: column;
@@ -91,20 +117,41 @@ body {
     padding: 15px;
     border-radius: 10px;
     color: #f5fbf7;
+    background: transparent;
     text-decoration: none;
     font-weight: 600;
-    transition: background 0.2s;
+    border-left: 3px solid transparent;
+    transition:
+        background-color var(--resto-transition),
+        color var(--resto-transition),
+        transform var(--resto-transition),
+        border-color var(--resto-transition);
 }
 
 .resto-nav-link i {
     font-size: 21px;
     width: 24px;
+    text-align: center;
+    transition: transform var(--resto-transition);
 }
 
 .resto-nav-link:hover,
-.resto-nav-link:focus {
+.resto-nav-link:focus-visible {
     color: white;
-    background: #176c53;
+    background: rgba(255, 255, 255, 0.10);
+    transform: translateX(3px);
+}
+
+.resto-nav-link:hover i {
+    transform: scale(1.08);
+}
+
+/* Halaman aktif tetap transparan */
+
+.resto-nav-link.active {
+    color: white;
+    background: transparent;
+    border-left-color: transparent;
 }
 
 .resto-sidebar-bottom {
@@ -124,6 +171,10 @@ body {
     line-height: 1.6;
 }
 
+/* =========================================
+   3. HEADER, KONTEN, DAN FOOTER
+========================================= */
+
 .resto-main {
     flex: 1;
     min-width: 0;
@@ -134,11 +185,12 @@ body {
 .resto-topbar {
     min-height: 65px;
     padding: 12px 28px;
-    background: #fffefa;
-    border-bottom: 1px solid #e5e6df;
+    background: var(--resto-white);
+    border-bottom: 1px solid var(--resto-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
 }
 
 .resto-topbar-title {
@@ -159,15 +211,215 @@ body {
 
 .resto-content {
     flex: 1;
+    min-width: 0;
     padding: 28px;
+    animation: restoFadeIn 0.35s ease both;
 }
 
 .resto-footer {
     padding: 18px 28px;
-    border-top: 1px solid #e3e5df;
-    color: #687b76;
-    background: #fffefa;
+    border-top: 1px solid var(--resto-border);
+    color: var(--resto-muted);
+    background: var(--resto-white);
 }
+
+/* =========================================
+   4. KARTU DASHBOARD BERWARNA
+========================================= */
+
+/* Kartu umum: putih hangat dengan garis lembut */
+
+.card {
+    color: var(--resto-text);
+    background-color: var(--resto-white);
+    border: 1px solid var(--resto-border);
+    border-radius: var(--resto-radius);
+    box-shadow: var(--resto-shadow);
+    transition:
+        transform var(--resto-transition),
+        box-shadow var(--resto-transition),
+        border-color var(--resto-transition);
+}
+
+/* Kartu yang dapat di-hover */
+
+.resto-hover-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--resto-shadow-hover);
+    border-color: #c4d9ca;
+}
+
+/* Warna khusus untuk kartu ringkasan Dashboard.
+   Tambahkan class sesuai jenis kartu yang diinginkan. */
+
+.resto-card-green {
+    background: #e3efe6;
+    border-color: #d0e3d5;
+}
+
+.resto-card-cream {
+    background: #f5eedc;
+    border-color: #e9dfc5;
+}
+
+.resto-card-sage {
+    background: #e6efed;
+    border-color: #d1e2de;
+}
+
+.resto-card-peach {
+    background: #f7e9df;
+    border-color: #eed8c8;
+}
+
+/* Ikon pada kartu ringkasan */
+
+.resto-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: rgba(7, 62, 50, 0.09);
+    color: var(--resto-green);
+    font-size: 23px;
+}
+
+/* =========================================
+   5. TOMBOL
+========================================= */
+
+.btn {
+    border-radius: 9px;
+    transition:
+        transform var(--resto-transition),
+        box-shadow var(--resto-transition),
+        background-color var(--resto-transition),
+        border-color var(--resto-transition);
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(7, 62, 50, 0.12);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.btn-success {
+    background-color: var(--resto-green);
+    border-color: var(--resto-green);
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: var(--resto-green-light);
+    border-color: var(--resto-green-light);
+}
+
+/* =========================================
+   6. FORMULIR
+========================================= */
+
+.form-control,
+.form-select {
+    border-radius: 9px;
+    border-color: #dce2da;
+    transition:
+        border-color var(--resto-transition),
+        box-shadow var(--resto-transition);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #4b9277;
+    box-shadow: 0 0 0 0.2rem rgba(23, 108, 83, 0.13);
+}
+
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible,
+.resto-nav-link:focus-visible {
+    outline: 3px solid rgba(37, 140, 251, 0.55);
+    outline-offset: 2px;
+}
+
+/* =========================================
+   7. TABEL
+========================================= */
+
+.table {
+    color: var(--resto-text);
+}
+
+.table thead th {
+    color: #31564b;
+    background: #edf3eb;
+    font-weight: 700;
+    white-space: nowrap;
+    border-bottom-color: #dce4dc;
+}
+
+.table tbody tr {
+    transition: background-color var(--resto-transition);
+}
+
+.table-hover tbody tr:hover {
+    --bs-table-bg: #eef5ed;
+}
+
+/* =========================================
+   8. GAMBAR MENU
+========================================= */
+
+.resto-menu-image {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #edf0e9;
+    transition:
+        transform var(--resto-transition),
+        box-shadow var(--resto-transition);
+}
+
+.resto-menu-image:hover {
+    transform: scale(1.06);
+    box-shadow: var(--resto-shadow);
+}
+
+.resto-image-preview {
+    display: block;
+    width: 180px;
+    max-width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--resto-border);
+}
+
+/* =========================================
+   9. ANIMASI MASUK HALAMAN
+========================================= */
+
+@keyframes restoFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================
+   10. RESPONSIVE
+========================================= */
 
 @media (max-width: 768px) {
     .resto-sidebar {
@@ -190,6 +442,12 @@ body {
     .resto-nav-link {
         justify-content: center;
         padding: 14px 8px;
+        gap: 0;
+    }
+
+    .resto-nav-link:hover,
+    .resto-nav-link:focus-visible {
+        transform: none;
     }
 
     .resto-sidebar-bottom {
@@ -202,5 +460,22 @@ body {
 
     .resto-topbar {
         padding: 12px 16px;
+    }
+
+    .resto-footer {
+        padding: 16px;
+    }
+}
+
+/* Kurangi gerakan sesuai preferensi aksesibilitas */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

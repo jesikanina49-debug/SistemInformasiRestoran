@@ -1,0 +1,139 @@
+
+@model SistemInformasiRestoran.Models.Menu
+
+@{
+    ViewData["Title"] = "Edit Menu";
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h2>Edit Menu</h2>
+        <p class="text-muted">Perbarui informasi dan foto makanan atau minuman.</p>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form asp-controller="Menu"
+                  asp-action="Edit"
+                  asp-route-id="@Model.IdMenu"
+                  method="post"
+                  enctype="multipart/form-data">
+
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="IdMenu" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="NamaMenu" class="form-label">Nama Menu</label>
+                    <input asp-for="NamaMenu" class="form-control" />
+                    <span asp-validation-for="NamaMenu"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="IdKategori" class="form-label">Kategori</label>
+                    <select asp-for="IdKategori"
+                            asp-items="ViewBag.DaftarKategori"
+                            class="form-select">
+                        <option value="">-- Pilih Kategori --</option>
+                    </select>
+                    <span asp-validation-for="IdKategori"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Harga" class="form-label">Harga (Rp)</label>
+                    <input asp-for="Harga" type="number" min="0" step="100"
+                           class="form-control" />
+                    <span asp-validation-for="Harga"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Stok" class="form-label">Stok</label>
+                    <input asp-for="Stok" type="number" min="0"
+                           class="form-control" />
+                    <span asp-validation-for="Stok"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label for="fileGambar" class="form-label">Foto Menu</label>
+
+                    @if (!string.IsNullOrEmpty(Model.Gambar))
+                    {
+                        <div class="mb-3">
+                            <p class="small text-muted">Foto saat ini:</p>
+                            <img src="@Url.Content("~/uploads/menu/" + Model.Gambar)"
+                                 alt="Foto @Model.NamaMenu"
+                                 style="max-width:220px; max-height:180px; object-fit:cover; border-radius:12px;" />
+                        </div>
+                    }
+
+                    <input type="file"
+                           id="fileGambar"
+                           name="fileGambar"
+                           class="form-control"
+                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+
+                    <div class="form-text">
+                        Pilih foto baru jika ingin mengganti foto saat ini.
+                        Format JPG, JPEG, PNG, atau WEBP, maksimal 2 MB.
+                    </div>
+
+                    <span class="text-danger">
+                        @Html.ValidationMessage("fileGambar")
+                    </span>
+
+                    <div class="mt-3">
+                        <img id="previewGambar"
+                             alt="Pratinjau foto baru"
+                             style="display:none; max-width:220px; max-height:180px; object-fit:cover; border-radius:12px;" />
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input asp-for="StatusTersedia"
+                           class="form-check-input" />
+                    <label asp-for="StatusTersedia"
+                           class="form-check-label">Menu Tersedia</label>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-1"></i> Simpan Perubahan
+                    </button>
+
+                    <a asp-controller="Menu" asp-action="Index"
+                       class="btn btn-outline-secondary">
+                        Batal
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        const inputGambar = document.getElementById("fileGambar");
+        const previewGambar = document.getElementById("previewGambar");
+
+        inputGambar.addEventListener("change", function () {
+            const file = this.files[0];
+
+            if (!file) {
+                previewGambar.style.display = "none";
+                previewGambar.removeAttribute("src");
+                return;
+            }
+
+            previewGambar.src = URL.createObjectURL(file);
+            previewGambar.style.display = "block";
+        });
+    </script>
+}

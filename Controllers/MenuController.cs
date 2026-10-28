@@ -1,6 +1,7 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SistemInformasiRestoran.Data;
 using SistemInformasiRestoran.Models;
@@ -11,10 +12,21 @@ namespace SistemInformasiRestoran.Controllers
     public class MenuController : Controller
     {
         private readonly RestoDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public MenuController(RestoDbContext context)
+        private const long MaksimalUkuranGambar = 2 * 1024 * 1024;
+
+        private static readonly string[] EkstensiGambar =
+        {
+            ".jpg", ".jpeg", ".png", ".webp"
+        };
+
+        public MenuController(
+            RestoDbContext context,
+            IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // Menampilkan daftar menu.
@@ -38,11 +50,12 @@ namespace SistemInformasiRestoran.Controllers
             return View();
         }
 
-        // Menyimpan menu baru.
+        // Menyimpan menu baru beserta gambar.
         [Authorize(Roles = "Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Menu menu)
+        public async Task<IActionResult> Create(
+            Menu menu, IFormFile? fileGambar)
         {
             if (ModelState.IsValid)
             {
@@ -53,15 +66,24 @@ namespace SistemInformasiRestoran.Controllers
                 {
                     ModelState.AddModelError(
                         nameof(menu.IdKategori),
-                        "Kategori yang dipilih tidak ditemukan."
-                    );
+                        "Kategori yang dipilih tidak ditemukan.");
                 }
+            }
+
+            if (!ValidasiGambar(fileGambar))
+            {
+                // Pesan kesalahan ditambahkan oleh ValidasiGambar.
             }
 
             if (!ModelState.IsValid)
             {
                 await MuatKategoriAsync(menu.IdKategori);
                 return View(menu);
+            }
+
+            if (fileGambar != null && fileGambar.Length > 0)
+            {
+                menu.Gambar = await SimpanGambarAsync(fileGambar);
             }
 
             _context.Menu.Add(menu);
@@ -87,11 +109,12 @@ namespace SistemInformasiRestoran.Controllers
             return View(menu);
         }
 
-        // Menyimpan perubahan menu.
+        // Menyimpan perubahan menu dan gambar jika diganti.
         [Authorize(Roles = "Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Menu menu)
+        public async Task<IActionResult> Edit(
+            int id, Menu menu, IFormFile? fileGambar)
         {
             if (id != menu.IdMenu)
             {
@@ -107,9 +130,13 @@ namespace SistemInformasiRestoran.Controllers
                 {
                     ModelState.AddModelError(
                         nameof(menu.IdKategori),
-                        "Kategori yang dipilih tidak ditemukan."
-                    );
+                        "Kategori yang dipilih tidak ditemukan.");
                 }
+            }
+
+            if (!ValidasiGambar(fileGambar))
+            {
+                // Pesan kesalahan ditambahkan oleh ValidasiGambar.
             }
 
             if (!ModelState.IsValid)
@@ -131,7 +158,33 @@ namespace SistemInformasiRestoran.Controllers
             menuDatabase.Stok = menu.Stok;
             menuDatabase.StatusTersedia = menu.StatusTersedia;
 
-            await _context.SaveChangesAsync();
+            string? gambarLama = menuDatabase.Gambar;
+            string? gambarBaru = null;
+
+            if (fileGambar != null && fileGambar.Length > 0)
+            {
+                gambarBaru = await SimpanGambarAsync(fileGambar);
+                menuDatabase.Gambar = gambarBaru;
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                if (gambarBaru != null)
+                {
+                    HapusFileGambar(gambarBaru);
+                }
+
+                throw;
+            }
+
+            if (gambarBaru != null && !string.IsNullOrEmpty(gambarLama))
+            {
+                HapusFileGambar(gambarLama);
+            }
 
             TempData["SuccessMessage"] = "Menu berhasil diperbarui.";
             return RedirectToAction(nameof(Index));
@@ -151,11 +204,19 @@ namespace SistemInformasiRestoran.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            string? gambarLama = menu.Gambar;
+
             _context.Menu.Remove(menu);
 
             try
             {
                 await _context.SaveChangesAsync();
+
+                if (!string.IsNullOrEmpty(gambarLama))
+                {
+                    HapusFileGambar(gambarLama);
+                }
+
                 TempData["SuccessMessage"] = "Menu berhasil dihapus.";
             }
             catch (DbUpdateException)
@@ -167,7 +228,81 @@ namespace SistemInformasiRestoran.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Mengambil kategori untuk pilihan pada formulir.
+        // Memeriksa format dan ukuran gambar.
+        private bool ValidasiGambar(IFormFile? file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return true;
+            }
+
+            if (file.Length > MaksimalUkuranGambar)
+            {
+                ModelState.AddModelError(
+                    "fileGambar",
+                    "Ukuran gambar maksimal 2 MB.");
+                return false;
+            }
+
+            string ekstensi = Path.GetExtension(file.FileName);
+
+            if (!EkstensiGambar.Contains(
+                ekstensi, StringComparer.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(
+                    "fileGambar",
+                    "Format gambar harus JPG, JPEG, PNG, atau WEBP.");
+                return false;
+            }
+
+            return true;
+        }
+
+        // Menyimpan gambar dengan nama file acak.
+        private async Task<string> SimpanGambarAsync(IFormFile file)
+        {
+            string folder = Path.Combine(
+                _environment.WebRootPath ?? Path.Combine(
+                    _environment.ContentRootPath, "wwwroot"),
+                "uploads", "menu");
+
+            Directory.CreateDirectory(folder);
+
+            string ekstensi = Path.GetExtension(file.FileName).ToLowerInvariant();
+            string namaFile = $"{Guid.NewGuid():N}{ekstensi}";
+            string lokasiFile = Path.Combine(folder, namaFile);
+
+            await using var stream = new FileStream(
+                lokasiFile, FileMode.CreateNew);
+
+            await file.CopyToAsync(stream);
+
+            return namaFile;
+        }
+
+        // Menghapus file gambar dari folder upload.
+        private void HapusFileGambar(string namaFile)
+        {
+            // Hanya menerima nama file, bukan jalur dari pengguna.
+            if (Path.GetFileName(namaFile) != namaFile)
+            {
+                return;
+            }
+
+            string folder = Path.Combine(
+                _environment.WebRootPath ?? Path.Combine(
+                    _environment.ContentRootPath, "wwwroot"),
+                "uploads", "menu");
+
+            string lokasiFile = Path.Combine(folder, namaFile);
+
+            if (System.IO.File.Exists(lokasiFile))
+            {
+                System.IO.File.Delete(lokasiFile);
+            }
+        }
+
+        // Mengambil kategori untuk formulir.
         private async Task MuatKategoriAsync(int? idTerpilih = null)
         {
             var kategori = await _context.Kategori
@@ -175,12 +310,11 @@ namespace SistemInformasiRestoran.Controllers
                 .OrderBy(k => k.NamaKategori)
                 .ToListAsync();
 
-            ViewBag.DaftarKategori = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
+            ViewBag.DaftarKategori = new SelectList(
                 kategori,
                 "IdKategori",
                 "NamaKategori",
-                idTerpilih
-            );
+                idTerpilih);
         }
     }
 }

@@ -3,89 +3,307 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="container-fluid">
-    <div class="mb-4">
-        <h2 class="fw-bold">Dashboard</h2>
-        <p class="text-secondary">
-            Selamat datang di RESTO POS.
-            Berikut ringkasan informasi restoran.
-        </p>
-    </div>
+<div class="container-fluid px-0">
 
-    <div class="row g-4">
-        <div class="col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-success mb-3">
-                        <i class="bi bi-cup-hot fs-2"></i>
-                    </div>
-                    <p class="text-secondary mb-1">Total Menu</p>
-                    <h3 class="fw-bold">12</h3>
-                    <small class="text-secondary">
-                        Data contoh
-                    </small>
-                </div>
-            </div>
-        </div>
+    <!-- Header Dashboard -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <span class="badge rounded-pill mb-2"
+                  style="background: #e3efe6; color: #073e32;">
+                <i class="bi bi-grid-1x2 me-1"></i>
+                Ringkasan Restoran
+            </span>
 
-        <div class="col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-primary mb-3">
-                        <i class="bi bi-shop fs-2"></i>
-                    </div>
-                    <p class="text-secondary mb-1">Total Meja</p>
-                    <h3 class="fw-bold">10</h3>
-                    <small class="text-secondary">
-                        Data contoh
-                    </small>
-                </div>
-            </div>
-        </div>
+            <h2 class="fw-bold mb-1">Dashboard</h2>
 
-        <div class="col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-warning mb-3">
-                        <i class="bi bi-receipt fs-2"></i>
-                    </div>
-                    <p class="text-secondary mb-1">
-                        Pesanan Hari Ini
-                    </p>
-                    <h3 class="fw-bold">8</h3>
-                    <small class="text-secondary">
-                        Data contoh
-                    </small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-danger mb-3">
-                        <i class="bi bi-wallet2 fs-2"></i>
-                    </div>
-                    <p class="text-secondary mb-1">
-                        Pendapatan Hari Ini
-                    </p>
-                    <h3 class="fw-bold">Rp450.000</h3>
-                    <small class="text-secondary">
-                        Data contoh
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card border-0 shadow-sm mt-4">
-        <div class="card-body p-4">
-            <h5 class="fw-bold mb-3">Aktivitas Restoran</h5>
             <p class="text-secondary mb-0">
-                Data pesanan dan pendapatan akan ditampilkan
-                di sini setelah fitur transaksi terhubung
-                ke database.
+                Selamat datang di RESTO POS. Kelola restoran dengan mudah,
+                cepat, dan akurat.
             </p>
         </div>
+
+        <div class="resto-date">
+            <i class="bi bi-calendar3 me-2"></i>
+            @DateTime.Now.ToString("dd MMMM yyyy",
+                System.Globalization.CultureInfo.GetCultureInfo("id-ID"))
+        </div>
     </div>
+
+    <!-- Kartu Ringkasan -->
+    <div class="row g-4">
+
+        <!-- Total Menu -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card resto-hover-card resto-card-green h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="mb-2 text-secondary">Total Menu</p>
+                            <h2 class="fw-bold mb-1">12</h2>
+                            <small class="text-secondary">Data contoh</small>
+                        </div>
+
+                        <div class="resto-card-icon">
+                            <i class="bi bi-cup-hot"></i>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 small">
+                        <i class="bi bi-arrow-right-circle me-1"></i>
+                        <a asp-controller="Menu"
+                           asp-action="Index"
+                           class="text-decoration-none fw-semibold"
+                           style="color: #073e32;">
+                            Lihat Data Menu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Meja -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card resto-hover-card resto-card-sage h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="mb-2 text-secondary">Total Meja</p>
+                            <h2 class="fw-bold mb-1">10</h2>
+                            <small class="text-secondary">Data contoh</small>
+                        </div>
+
+                        <div class="resto-card-icon">
+                            <i class="bi bi-shop"></i>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 small">
+                        <i class="bi bi-grid me-1"></i>
+                        <span class="text-secondary">Meja restoran</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pesanan Hari Ini -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card resto-hover-card resto-card-cream h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="mb-2 text-secondary">Pesanan Hari Ini</p>
+                            <h2 class="fw-bold mb-1">8</h2>
+                            <small class="text-secondary">Data contoh</small>
+                        </div>
+
+                        <div class="resto-card-icon">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 small">
+                        <i class="bi bi-clock me-1"></i>
+                        <span class="text-secondary">Transaksi harian</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pendapatan Hari Ini -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card resto-hover-card resto-card-peach h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="mb-2 text-secondary">Pendapatan Hari Ini</p>
+                            <h2 class="fw-bold mb-1"
+                                style="font-size: 1.65rem;">
+                                Rp450.000
+                            </h2>
+                            <small class="text-secondary">Data contoh</small>
+                        </div>
+
+                        <div class="resto-card-icon">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 small">
+                        <i class="bi bi-cash-stack me-1"></i>
+                        <span class="text-secondary">Omzet harian</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bagian Informasi -->
+    <div class="row g-4 mt-1">
+
+        <div class="col-12 col-lg-7">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="resto-card-icon">
+                            <i class="bi bi-activity"></i>
+                        </div>
+
+                        <div>
+                            <h5 class="fw-bold mb-1">Aktivitas Restoran</h5>
+                            <p class="text-secondary small mb-0">
+                                Informasi transaksi dan kegiatan restoran
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="rounded-3 p-4 text-center"
+                         style="background: #f4f5ee;">
+                        <i class="bi bi-clipboard-data display-5"
+                           style="color: #176c53;"></i>
+
+                        <p class="fw-semibold mt-3 mb-1">
+                            Aktivitas belum tersedia
+                        </p>
+
+                        <p class="text-secondary small mb-0">
+                            Riwayat transaksi akan ditampilkan setelah
+                            fitur pemesanan dan pembayaran terhubung
+                            ke database.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="resto-card-icon">
+                            <i class="bi bi-lightning-charge"></i>
+                        </div>
+
+                        <div>
+                            <h5 class="fw-bold mb-1">Akses Cepat</h5>
+                            <p class="text-secondary small mb-0">
+                                Menu yang sering digunakan
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        <a asp-controller="Menu"
+                           asp-action="Index"
+                           class="resto-quick-link">
+                            <i class="bi bi-cup-hot"></i>
+                            <span>
+                                <strong>Data Menu</strong>
+                                <small>Kelola makanan dan minuman</small>
+                            </span>
+                            <i class="bi bi-chevron-right ms-auto"></i>
+                        </a>
+
+                        <a asp-controller="Home"
+                           asp-action="Menu"
+                           class="resto-quick-link">
+                            <i class="bi bi-cart3"></i>
+                            <span>
+                                <strong>Pemesanan</strong>
+                                <small>Buka halaman pemesanan</small>
+                            </span>
+                            <i class="bi bi-chevron-right ms-auto"></i>
+                        </a>
+
+                        <a asp-controller="Database"
+                           asp-action="Index"
+                           class="resto-quick-link">
+                            <i class="bi bi-database-check"></i>
+                            <span>
+                                <strong>Koneksi Database</strong>
+                                <small>Periksa koneksi aplikasi</small>
+                            </span>
+                            <i class="bi bi-chevron-right ms-auto"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Catatan -->
+    <div class="mt-4 p-3 rounded-3"
+         style="background: #e3efe6; color: #31564b;">
+        <i class="bi bi-info-circle me-2"></i>
+        <small>
+            Angka pada kartu Dashboard saat ini masih berupa data contoh,
+            belum mengambil nilai langsung dari database.
+        </small>
+    </div>
+
 </div>
+
+<style>
+    .resto-date {
+        padding: 10px 15px;
+        border: 1px solid #e2e7df;
+        border-radius: 10px;
+        background: #fffefa;
+        color: #31564b;
+        font-size: 0.9rem;
+    }
+
+    .resto-quick-link {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 14px;
+        border: 1px solid #e2e7df;
+        border-radius: 12px;
+        color: #183c3b;
+        background: #fffefa;
+        text-decoration: none;
+        transition: background-color 0.22s ease,
+                    border-color 0.22s ease,
+                    transform 0.22s ease,
+                    box-shadow 0.22s ease;
+    }
+
+    .resto-quick-link > i:first-child {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        border-radius: 10px;
+        background: #e3efe6;
+        color: #073e32;
+        font-size: 21px;
+    }
+
+    .resto-quick-link span {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .resto-quick-link small {
+        color: #687b76;
+    }
+
+    .resto-quick-link:hover {
+        background: #f0f5ee;
+        border-color: #b8d2bf;
+        color: #073e32;
+        transform: translateX(3px);
+        box-shadow: 0 5px 12px rgba(7, 62, 50, 0.08);
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .resto-quick-link {
+            transition: none;
+        }
+    }
+</style>
