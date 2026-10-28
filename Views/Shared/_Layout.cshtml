@@ -10,45 +10,375 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SistemInformasiRestoran.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <style>
+        :root {
+            --resto-green: #28734a;
+            --resto-green-dark: #1d5637;
+            --resto-cream: #fffdf7;
+            --resto-text: #263b2d;
+            --resto-muted: #7a887d;
+            --resto-border: #e5e8df;
+        }
+
+        .resto-body {
+            margin: 0;
+            background: #f6f8f3;
+            color: var(--resto-text);
+        }
+
+        .resto-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .resto-sidebar {
+            width: 255px;
+            min-width: 255px;
+            background: var(--resto-cream);
+            border-right: 1px solid var(--resto-border);
+            display: flex;
+            flex-direction: column;
+            padding: 22px 15px;
+        }
+
+        .resto-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 4px 10px 25px;
+            color: var(--resto-green-dark);
+            text-decoration: none;
+        }
+
+        .resto-brand > i {
+            font-size: 32px;
+            color: var(--resto-green);
+        }
+
+        .resto-brand strong {
+            display: block;
+            font-size: 18px;
+            letter-spacing: .5px;
+        }
+
+        .resto-brand small {
+            display: block;
+            margin-top: 3px;
+            color: var(--resto-muted);
+            font-size: 11px;
+        }
+
+        .resto-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .resto-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            color: #536358;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background .2s ease, color .2s ease;
+        }
+
+        .resto-nav-link i {
+            width: 21px;
+            text-align: center;
+            font-size: 17px;
+        }
+
+        .resto-nav-link:hover,
+        .resto-nav-link.active {
+            background: #e8f2e9;
+            color: var(--resto-green-dark);
+        }
+
+        .resto-nav-link.active {
+            font-weight: 600;
+        }
+
+        .resto-sidebar-bottom {
+            margin-top: auto;
+            padding: 18px 12px 4px;
+            color: var(--resto-muted);
+            font-size: 13px;
+        }
+
+        .resto-sidebar-bottom i {
+            color: var(--resto-green);
+            font-size: 23px;
+        }
+
+        .resto-sidebar-bottom p {
+            margin: 7px 0 0;
+            line-height: 1.6;
+        }
+
+        .resto-main {
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .resto-topbar {
+            min-height: 72px;
+            padding: 14px 28px;
+            background: #fff;
+            border-bottom: 1px solid var(--resto-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .resto-topbar-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .resto-user-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .resto-user {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 13px;
+        }
+
+        .resto-user > i {
+            font-size: 25px;
+            color: var(--resto-green);
+        }
+
+        .resto-user-info small {
+            display: block;
+            margin-top: 2px;
+            color: var(--resto-muted);
+            font-size: 11px;
+        }
+
+        .resto-logout-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 12px;
+            border: 1px solid #f0d5d2;
+            border-radius: 9px;
+            background: #fff;
+            color: #b33a32;
+            font-size: 13px;
+        }
+
+        .resto-logout-button:hover {
+            background: #fff0ee;
+            color: #8e2822;
+        }
+
+        .resto-content {
+            flex: 1;
+            padding: 28px;
+        }
+
+        .resto-footer {
+            padding: 16px 28px;
+            color: var(--resto-muted);
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .resto-toast-container {
+            position: fixed;
+            top: 22px;
+            right: 22px;
+            z-index: 1090;
+            width: min(380px, calc(100vw - 32px));
+        }
+
+        .resto-toast {
+            background: var(--resto-cream);
+            border: 1px solid var(--resto-border);
+            border-left: 5px solid var(--resto-green);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(22, 48, 32, .16);
+            overflow: hidden;
+        }
+
+        .resto-toast.toast-error {
+            border-left-color: #c0392b;
+        }
+
+        .resto-toast.toast-info {
+            border-left-color: #2876a8;
+        }
+
+        .resto-toast .toast-body {
+            padding: 15px 16px;
+            color: var(--resto-text);
+            font-size: 14px;
+            overflow-wrap: anywhere;
+        }
+
+        .resto-toast-icon {
+            font-size: 23px;
+            flex-shrink: 0;
+        }
+
+        .resto-toast .btn-close {
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+
+        .resto-mobile-brand {
+            display: none;
+        }
+
+        @@media (max-width: 850px) {
+            .resto-layout {
+                flex-direction: column;
+            }
+
+            .resto-sidebar {
+                width: 100%;
+                min-width: 0;
+                padding: 12px;
+                border-right: 0;
+                border-bottom: 1px solid var(--resto-border);
+            }
+
+            .resto-brand {
+                padding: 4px 8px 14px;
+            }
+
+            .resto-nav {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 5px;
+            }
+
+            .resto-nav-link {
+                flex: 0 0 auto;
+                padding: 10px 12px;
+            }
+
+            .resto-sidebar-bottom {
+                display: none;
+            }
+
+            .resto-topbar {
+                padding: 14px 18px;
+            }
+
+            .resto-content {
+                padding: 20px 16px;
+            }
+
+            .resto-footer {
+                padding: 15px;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .resto-topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .resto-user-area {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .resto-content {
+                padding: 16px 12px;
+            }
+        }
+    </style>
 </head>
+
 <body class="resto-body">
+    @{
+        var successMessage = TempData["SuccessMessage"]?.ToString();
+        var errorMessage = TempData["ErrorMessage"]?.ToString();
+        var infoMessage = TempData["InfoMessage"]?.ToString();
+
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+
+        var userRole = User.FindFirst(
+            System.Security.Claims.ClaimTypes.Role
+        )?.Value;
+    }
 
     <div class="resto-layout">
         <aside class="resto-sidebar">
-            <a class="resto-brand" asp-controller="Home" asp-action="Index">
-                <i class="bi bi-fork-knife"></i>
+            <a class="resto-brand"
+               asp-controller="Home"
+               asp-action="Index"
+               aria-label="RESTO POS Dashboard">
+                <i class="bi bi-shop"></i>
                 <span>
                     <strong>RESTO POS</strong>
                     <small>Mudah · Cepat · Akurat</small>
                 </span>
             </a>
 
-            <nav class="resto-nav">
-                <a asp-controller="Home" asp-action="Index" class="resto-nav-link">
+            <nav class="resto-nav" aria-label="Navigasi utama">
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="resto-nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")">
                     <i class="bi bi-house-door-fill"></i>
                     <span>Dashboard</span>
                 </a>
-                <a asp-controller="Home" asp-action="Index" class="resto-nav-link">
+
+                <a asp-controller="Home"
+                   asp-action="Menu"
+                   class="resto-nav-link @(currentController == "Home" && currentAction == "Menu" ? "active" : "")">
                     <i class="bi bi-cart-fill"></i>
                     <span>Pemesanan</span>
                 </a>
-                <a asp-controller="Home" asp-action="Index" class="resto-nav-link">
+
+                <a asp-controller="Menu"
+                   asp-action="Index"
+                   class="resto-nav-link @(currentController == "Menu" ? "active" : "")">
                     <i class="bi bi-journal-richtext"></i>
                     <span>Data Menu</span>
                 </a>
-                <a asp-controller="Home" asp-action="Index" class="resto-nav-link">
+
+                <a asp-controller="Kategori"
+                   asp-action="Index"
+                   class="resto-nav-link @(currentController == "Kategori" ? "active" : "")">
                     <i class="bi bi-tags-fill"></i>
                     <span>Kategori Menu</span>
                 </a>
-                <a asp-controller="Home" asp-action="Index" class="resto-nav-link">
+
+                <a asp-controller="Meja"
+                   asp-action="Index"
+                   class="resto-nav-link @(currentController == "Meja" ? "active" : "")">
                     <i class="bi bi-shop"></i>
                     <span>Data Meja</span>
                 </a>
-                <a asp-controller="Home" asp-action="Index" class="resto-nav-link">
+
+                <a asp-controller="Pembayaran"
+                   asp-action="Index"
+                   class="resto-nav-link @(currentController == "Pembayaran" ? "active" : "")">
                     <i class="bi bi-credit-card-fill"></i>
                     <span>Pembayaran</span>
                 </a>
-                <a asp-controller="Home" asp-action="Index" class="resto-nav-link">
+
+                <a asp-controller="Laporan"
+                   asp-action="Index"
+                   class="resto-nav-link @(currentController == "Laporan" ? "active" : "")">
                     <i class="bi bi-bar-chart-fill"></i>
                     <span>Laporan</span>
                 </a>
@@ -62,10 +392,40 @@
 
         <div class="resto-main">
             <header class="resto-topbar">
-                <span class="resto-topbar-title">Sistem Informasi Restoran</span>
-                <div class="resto-user">
-                    <i class="bi bi-person-circle"></i>
-                    <span>Kasir</span>
+                <span class="resto-topbar-title">
+                    Sistem Informasi Restoran
+                </span>
+
+                <div class="resto-user-area">
+                    <div class="resto-user">
+                        <i class="bi bi-person-circle"></i>
+                        <span class="resto-user-info">
+                            <strong>
+                                @(User.Identity?.IsAuthenticated == true
+                                    ? User.Identity.Name
+                                    : "Pengguna")
+                            </strong>
+                            @if (User.Identity?.IsAuthenticated == true)
+                            {
+                                <small>@(userRole ?? "Pengguna")</small>
+                            }
+                        </span>
+                    </div>
+
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form asp-controller="Account"
+                              asp-action="Logout"
+                              method="post"
+                              class="m-0">
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit" class="resto-logout-button">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    }
                 </div>
             </header>
 
@@ -79,9 +439,79 @@
         </div>
     </div>
 
+    <div class="resto-toast-container" aria-live="polite" aria-atomic="true">
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="toast resto-toast mb-3" id="successToast" role="status">
+                <div class="d-flex align-items-center">
+                    <div class="toast-body d-flex align-items-center gap-3">
+                        <i class="bi bi-check-circle-fill resto-toast-icon"
+                           style="color: #28734a;"></i>
+                        <div>
+                            <strong class="d-block mb-1">Berhasil!</strong>
+                            <span>@successMessage</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="toast" aria-label="Tutup"></button>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="toast resto-toast toast-error mb-3"
+                 id="errorToast" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="toast-body d-flex align-items-center gap-3">
+                        <i class="bi bi-x-circle-fill resto-toast-icon"
+                           style="color: #c0392b;"></i>
+                        <div>
+                            <strong class="d-block mb-1">Terjadi Kesalahan</strong>
+                            <span>@errorMessage</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="toast" aria-label="Tutup"></button>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(infoMessage))
+        {
+            <div class="toast resto-toast toast-info mb-3"
+                 id="infoToast" role="status">
+                <div class="d-flex align-items-center">
+                    <div class="toast-body d-flex align-items-center gap-3">
+                        <i class="bi bi-info-circle-fill resto-toast-icon"
+                           style="color: #2876a8;"></i>
+                        <div>
+                            <strong class="d-block mb-1">Informasi</strong>
+                            <span>@infoMessage</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="toast" aria-label="Tutup"></button>
+                </div>
+            </div>
+        }
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".resto-toast").forEach(function (element) {
+                bootstrap.Toast.getOrCreateInstance(element, {
+                    autohide: true,
+                    delay: 4500
+                }).show();
+            });
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

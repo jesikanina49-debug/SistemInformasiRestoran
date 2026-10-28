@@ -1,0 +1,185 @@
+
+@{
+    ViewData["Title"] = "Buat Akun Manager";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Buat Akun Manager | RESTO POS</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f1e8;
+            color: #24352d;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 440px;
+            padding: 36px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 15px 45px rgba(24, 61, 48, 0.12);
+        }
+
+        .brand {
+            color: #183d30;
+            font-size: 24px;
+            font-weight: 750;
+            margin-bottom: 25px;
+        }
+
+        .brand span {
+            color: #b58b43;
+        }
+
+        h1 {
+            font-size: 25px;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #777f78;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 17px 0 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #dce2dc;
+            border-radius: 9px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        input:focus {
+            border-color: #39765a;
+            box-shadow: 0 0 0 3px rgba(57, 118, 90, 0.1);
+        }
+
+        button {
+            width: 100%;
+            margin-top: 25px;
+            padding: 14px;
+            border: none;
+            border-radius: 9px;
+            background: #24563f;
+            color: white;
+            font-size: 15px;
+            font-weight: 650;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #183d30;
+        }
+
+        .error {
+            padding: 12px;
+            background: #fff0ef;
+            color: #b42318;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .note {
+            margin-top: 20px;
+            color: #858b85;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        @@media (max-width: 480px) {
+            .card {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="card">
+        <div class="brand">RESTO <span>POS</span></div>
+
+        <h1>Buat Akun Manager</h1>
+
+        <p class="description">
+            Buat akun Manager pertama untuk mengelola sistem
+            informasi restoran.
+        </p>
+
+        @if (ViewBag.Error != null)
+        {
+            <p class="error">@ViewBag.Error</p>
+        }
+
+        <form method="post" action="/Account/SetupManager">
+            @Html.AntiForgeryToken()
+
+            <label for="nama">Nama lengkap</label>
+            <input id="nama"
+                   name="nama"
+                   type="text"
+                   maxlength="100"
+                   autocomplete="name"
+                   required />
+
+            <label for="username">Username</label>
+            <input id="username"
+                   name="username"
+                   type="text"
+                   maxlength="50"
+                   autocomplete="username"
+                   required />
+
+            <label for="password">Password</label>
+            <input id="password"
+                   name="password"
+                   type="password"
+                   minlength="12"
+                   autocomplete="new-password"
+                   required />
+
+            <label for="konfirmasiPassword">Konfirmasi password</label>
+            <input id="konfirmasiPassword"
+                   name="konfirmasiPassword"
+                   type="password"
+                   minlength="12"
+                   autocomplete="new-password"
+                   required />
+
+            <button type="submit">Buat Akun Manager</button>
+        </form>
+
+        <p class="note">
+            Gunakan password minimal 12 karakter. Password akan
+            disimpan dalam bentuk hash, bukan teks biasa.
+        </p>
+    </main>
+</body>
+</html>

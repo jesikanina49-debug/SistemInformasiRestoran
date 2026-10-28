@@ -1,0 +1,434 @@
+ @{
+    ViewData["Title"] = "Login RESTO POS";
+    Layout = null;
+
+    var successMessage = TempData["SuccessMessage"]?.ToString();
+    var errorMessage = TempData["ErrorMessage"]?.ToString();
+}
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login | RESTO POS</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f4f1e8;
+            padding: 24px;
+            color: #24352d;
+        }
+
+        .login-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: 900px;
+            max-width: 100%;
+            min-height: 530px;
+            background: #ffffff;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 18px 55px rgba(32, 55, 42, 0.12);
+        }
+
+        .welcome-panel {
+            background: #183d30;
+            color: #ffffff;
+            padding: 55px 42px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: 750;
+            letter-spacing: 1px;
+            margin-bottom: 55px;
+        }
+
+        .brand span {
+            color: #d9b879;
+        }
+
+        .welcome-panel h1 {
+            font-size: 35px;
+            line-height: 1.25;
+            margin-bottom: 18px;
+        }
+
+        .welcome-panel p {
+            color: #d5e0d8;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .welcome-note {
+            margin-top: 45px;
+            color: #d9b879;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+        }
+
+        .form-panel {
+            padding: 65px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-panel h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #858b85;
+            font-size: 14px;
+            margin-bottom: 35px;
+        }
+
+        .form-group {
+            margin-bottom: 21px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 9px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid #dce2dc;
+            border-radius: 9px;
+            outline: none;
+            font-size: 14px;
+            background: #fbfcfa;
+        }
+
+        input:focus {
+            border-color: #39765a;
+            box-shadow: 0 0 0 3px rgba(57, 118, 90, 0.1);
+        }
+
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            padding-right: 48px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #68766c;
+            font-size: 19px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .toggle-password:hover {
+            color: #24563f;
+        }
+
+        .toggle-password:focus-visible {
+            outline: 2px solid #39765a;
+            border-radius: 4px;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 9px;
+            background: #24563f;
+            color: white;
+            font-size: 15px;
+            font-weight: 650;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .login-button:hover {
+            background: #183d30;
+        }
+
+        .footer {
+            margin-top: 28px;
+            color: #929892;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .login-toast-container {
+            position: fixed;
+            top: 22px;
+            right: 22px;
+            z-index: 9999;
+            width: min(380px, calc(100vw - 32px));
+        }
+
+        .login-toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: #fffdf7;
+            border: 1px solid #e5e8df;
+            border-left: 5px solid #28734a;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(22, 48, 32, 0.16);
+            animation: toastAppear 0.3s ease-out;
+        }
+
+        .login-toast.toast-error {
+            border-left-color: #c0392b;
+        }
+
+        .login-toast-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .login-toast.toast-success .login-toast-icon {
+            color: #28734a;
+        }
+
+        .login-toast.toast-error .login-toast-icon {
+            color: #c0392b;
+        }
+
+        .login-toast-message {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .login-toast-message strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .login-toast-close {
+            border: 0;
+            background: transparent;
+            color: #6b756d;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 0 3px;
+        }
+
+        @@keyframes toastAppear {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@media (max-width: 650px) {
+            .login-container {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-panel {
+                padding: 30px;
+            }
+
+            .brand {
+                margin-bottom: 25px;
+            }
+
+            .welcome-panel h1 {
+                font-size: 28px;
+            }
+
+            .welcome-note {
+                margin-top: 20px;
+            }
+
+            .form-panel {
+                padding: 35px 28px;
+            }
+
+            .login-toast-container {
+                top: 12px;
+                right: 12px;
+                width: calc(100vw - 24px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-toast-container" aria-live="polite" aria-atomic="true">
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="login-toast toast-success" role="status">
+                <i class="bi bi-check-circle-fill login-toast-icon"></i>
+                <div class="login-toast-message">
+                    <strong>Berhasil!</strong>
+                    <span>@successMessage</span>
+                </div>
+                <button type="button" class="login-toast-close" aria-label="Tutup">&times;</button>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="login-toast toast-error" role="alert">
+                <i class="bi bi-x-circle-fill login-toast-icon"></i>
+                <div class="login-toast-message">
+                    <strong>Login Gagal</strong>
+                    <span>@errorMessage</span>
+                </div>
+                <button type="button" class="login-toast-close" aria-label="Tutup">&times;</button>
+            </div>
+        }
+    </div>
+
+    <div class="login-container">
+        <section class="welcome-panel">
+            <div class="brand">RESTO <span>POS</span></div>
+
+            <h1>Kelola Restoran Lebih Mudah.</h1>
+
+            <p>
+                Sistem informasi restoran untuk membantu pengelolaan
+                menu, pemesanan meja, transaksi pembayaran, dan laporan
+                penjualan dalam satu tempat.
+            </p>
+
+            <div class="welcome-note">SIMPLE · EFFICIENT · ORGANIZED</div>
+        </section>
+
+        <section class="form-panel">
+            <h2>Selamat Datang!</h2>
+            <p class="subtitle">Silakan masuk ke akun Anda.</p>
+
+            <form method="post" action="/Account/Login">
+                @Html.AntiForgeryToken()
+
+                @if (ViewBag.Error != null)
+                {
+                    <p style="color: #b42318; margin-bottom: 15px; font-size: 14px;">
+                        @ViewBag.Error
+                    </p>
+                }
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input id="username"
+                           name="username"
+                           type="text"
+                           placeholder="Masukkan username"
+                           autocomplete="username"
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+
+                    <div class="password-wrapper">
+                        <input id="password"
+                               name="password"
+                               type="password"
+                               placeholder="Masukkan password"
+                               autocomplete="current-password"
+                               required />
+
+                        <button type="button"
+                                class="toggle-password"
+                                id="togglePassword"
+                                aria-label="Tampilkan password"
+                                aria-pressed="false">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="login-button" type="submit">
+                    Masuk ke Dashboard
+                </button>
+            </form>
+
+            <div class="footer">
+                © 2026 RESTO POS · Restaurant Management System
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const passwordInput = document.getElementById("password");
+            const togglePassword = document.getElementById("togglePassword");
+            const eyeIcon = document.getElementById("eyeIcon");
+
+            togglePassword.addEventListener("click", function () {
+                const isHidden = passwordInput.type === "password";
+
+                passwordInput.type = isHidden ? "text" : "password";
+
+                eyeIcon.classList.toggle("bi-eye", !isHidden);
+                eyeIcon.classList.toggle("bi-eye-slash", isHidden);
+
+                togglePassword.setAttribute(
+                    "aria-label",
+                    isHidden ? "Sembunyikan password" : "Tampilkan password"
+                );
+
+                togglePassword.setAttribute("aria-pressed", String(isHidden));
+            });
+
+            document.querySelectorAll(".login-toast").forEach(function (toast) {
+                const closeButton = toast.querySelector(".login-toast-close");
+
+                if (closeButton) {
+                    closeButton.addEventListener("click", function () {
+                        toast.remove();
+                    });
+                }
+
+                window.setTimeout(function () {
+                    toast.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+                    toast.style.opacity = "0";
+                    toast.style.transform = "translateY(-10px)";
+
+                    window.setTimeout(function () {
+                        toast.remove();
+                    }, 300);
+                }, 4500);
+            });
+        });
+    </script>
+</body>
+</html>
