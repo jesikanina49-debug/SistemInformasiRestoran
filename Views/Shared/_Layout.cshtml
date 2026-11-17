@@ -1,5 +1,4 @@
-﻿
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="utf-8" />
@@ -21,25 +20,43 @@
             --resto-border: #e5e8df;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            width: 100%;
+            min-height: 100%;
+        }
+
         .resto-body {
             margin: 0;
             background: #f6f8f3;
             color: var(--resto-text);
+            overflow: hidden;
         }
 
         .resto-layout {
             display: flex;
+            width: 100%;
+            height: 100vh;
             min-height: 100vh;
+            overflow: hidden;
         }
 
         .resto-sidebar {
             width: 255px;
             min-width: 255px;
+            height: 100vh;
             background: var(--resto-cream);
             border-right: 1px solid var(--resto-border);
             display: flex;
             flex-direction: column;
             padding: 22px 15px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-shrink: 0;
         }
 
         .resto-brand {
@@ -49,6 +66,7 @@
             padding: 4px 10px 25px;
             color: var(--resto-green-dark);
             text-decoration: none;
+            flex-shrink: 0;
         }
 
         .resto-brand > i {
@@ -123,11 +141,19 @@
         .resto-main {
             min-width: 0;
             flex: 1;
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
         }
 
+        /* HEADER TETAP DI ATAS SAAT DI-SCROLL */
         .resto-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
             min-height: 72px;
             padding: 14px 28px;
             background: #fff;
@@ -136,6 +162,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 15px;
+            flex-shrink: 0;
         }
 
         .resto-topbar-title {
@@ -244,16 +271,26 @@
         }
 
         @@media (max-width: 850px) {
+            .resto-body {
+                overflow: auto;
+            }
+
             .resto-layout {
                 flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow: visible;
             }
 
             .resto-sidebar {
                 width: 100%;
                 min-width: 0;
+                height: auto;
                 padding: 12px;
                 border-right: 0;
                 border-bottom: 1px solid var(--resto-border);
+                position: static;
+                overflow: visible;
             }
 
             .resto-brand {
@@ -273,6 +310,11 @@
 
             .resto-sidebar-bottom {
                 display: none;
+            }
+
+            .resto-main {
+                height: auto;
+                overflow: visible;
             }
 
             .resto-topbar {
@@ -307,6 +349,7 @@
 </head>
 
 <body class="resto-body">
+
     @{
         var successMessage = TempData["SuccessMessage"]?.ToString();
         var errorMessage = TempData["ErrorMessage"]?.ToString();
@@ -321,12 +364,17 @@
     }
 
     <div class="resto-layout">
+
+        <!-- SIDEBAR -->
         <aside class="resto-sidebar">
+
             <a class="resto-brand"
                asp-controller="Home"
                asp-action="Index"
                aria-label="RESTO POS Dashboard">
+
                 <i class="bi bi-shop"></i>
+
                 <span>
                     <strong>RESTO POS</strong>
                     <small>Mudah · Cepat · Akurat</small>
@@ -334,82 +382,121 @@
             </a>
 
             <nav class="resto-nav" aria-label="Navigasi utama">
+
+                <!-- 1. DASHBOARD -->
                 <a asp-controller="Home"
                    asp-action="Index"
                    class="resto-nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : "")">
+
                     <i class="bi bi-house-door-fill"></i>
                     <span>Dashboard</span>
                 </a>
 
-                <a asp-controller="Home"
-                   asp-action="Menu"
-                   class="resto-nav-link @(currentController == "Home" && currentAction == "Menu" ? "active" : "")">
-                    <i class="bi bi-cart-fill"></i>
-                    <span>Pemesanan</span>
-                </a>
-
-                <a asp-controller="Menu"
-                   asp-action="Index"
-                   class="resto-nav-link @(currentController == "Menu" ? "active" : "")">
-                    <i class="bi bi-journal-richtext"></i>
-                    <span>Data Menu</span>
-                </a>
-
+                <!-- 2. KATEGORI MENU -->
                 <a asp-controller="Kategori"
                    asp-action="Index"
                    class="resto-nav-link @(currentController == "Kategori" ? "active" : "")">
+
                     <i class="bi bi-tags-fill"></i>
                     <span>Kategori Menu</span>
                 </a>
 
+                <!-- 3. DATA MENU -->
+                <a asp-controller="Menu"
+                   asp-action="Index"
+                   class="resto-nav-link @(currentController == "Menu" ? "active" : "")">
+
+                    <i class="bi bi-journal-richtext"></i>
+                    <span>Data Menu</span>
+                </a>
+
+                <!-- 4. PEMESANAN -->
+                <a asp-controller="Pemesanan"
+                   asp-action="Index"
+                   class="resto-nav-link @(currentController == "Pemesanan" && currentAction == "Index" ? "active" : "")">
+
+                    <i class="bi bi-cart-fill"></i>
+                    <span>Pemesanan</span>
+                </a>
+
+                <!-- 5. DATA MEJA -->
                 <a asp-controller="Meja"
                    asp-action="Index"
                    class="resto-nav-link @(currentController == "Meja" ? "active" : "")">
+
                     <i class="bi bi-shop"></i>
                     <span>Data Meja</span>
                 </a>
 
+                <!-- 6. PEMBAYARAN -->
                 <a asp-controller="Pembayaran"
                    asp-action="Index"
                    class="resto-nav-link @(currentController == "Pembayaran" ? "active" : "")">
+
                     <i class="bi bi-credit-card-fill"></i>
                     <span>Pembayaran</span>
                 </a>
 
+                <!-- 7. LAPORAN -->
                 <a asp-controller="Laporan"
                    asp-action="Index"
                    class="resto-nav-link @(currentController == "Laporan" ? "active" : "")">
+
                     <i class="bi bi-bar-chart-fill"></i>
                     <span>Laporan</span>
                 </a>
+
+                <!-- 8. MANAJEMEN AKUN: KHUSUS MANAGER -->
+                @if (User.IsInRole("Manager"))
+                {
+                    <a asp-controller="Account"
+                       asp-action="Create"
+                       class="resto-nav-link @(currentController == "Account" && currentAction == "Create" ? "active" : "")">
+
+                        <i class="bi bi-person-plus-fill"></i>
+                        <span>Manajemen Akun</span>
+                    </a>
+                }
+
             </nav>
 
             <div class="resto-sidebar-bottom">
                 <i class="bi bi-emoji-smile"></i>
                 <p>Rasa Lezat<br />Pelayanan Cepat</p>
             </div>
+
         </aside>
 
+        <!-- KONTEN UTAMA -->
         <div class="resto-main">
+
             <header class="resto-topbar">
+
                 <span class="resto-topbar-title">
                     Sistem Informasi Restoran
                 </span>
 
                 <div class="resto-user-area">
+
                     <div class="resto-user">
+
                         <i class="bi bi-person-circle"></i>
+
                         <span class="resto-user-info">
+
                             <strong>
                                 @(User.Identity?.IsAuthenticated == true
                                     ? User.Identity.Name
                                     : "Pengguna")
                             </strong>
+
                             @if (User.Identity?.IsAuthenticated == true)
                             {
                                 <small>@(userRole ?? "Pengguna")</small>
                             }
+
                         </span>
+
                     </div>
 
                     @if (User.Identity?.IsAuthenticated == true)
@@ -418,42 +505,62 @@
                               asp-action="Logout"
                               method="post"
                               class="m-0">
+
                             @Html.AntiForgeryToken()
 
                             <button type="submit" class="resto-logout-button">
                                 <i class="bi bi-box-arrow-right"></i>
                                 <span>Logout</span>
                             </button>
+
                         </form>
                     }
-                </div>
-            </header>
 
-            <main class="resto-content">
+                </div>
+
+            </header>            <main class="resto-content">
                 @RenderBody()
             </main>
 
             <footer class="resto-footer">
                 &copy; 2026 RESTO POS · Sistem Informasi Restoran
             </footer>
+
         </div>
+
     </div>
 
-    <div class="resto-toast-container" aria-live="polite" aria-atomic="true">
+    <!-- NOTIFIKASI -->
+    <div class="resto-toast-container"
+         aria-live="polite"
+         aria-atomic="true">
+
         @if (!string.IsNullOrWhiteSpace(successMessage))
         {
-            <div class="toast resto-toast mb-3" id="successToast" role="status">
+            <div class="toast resto-toast mb-3"
+                 id="successToast"
+                 role="status">
+
                 <div class="d-flex align-items-center">
+
                     <div class="toast-body d-flex align-items-center gap-3">
+
                         <i class="bi bi-check-circle-fill resto-toast-icon"
                            style="color: #28734a;"></i>
+
                         <div>
                             <strong class="d-block mb-1">Berhasil!</strong>
                             <span>@successMessage</span>
                         </div>
+
                     </div>
-                    <button type="button" class="btn-close"
-                            data-bs-dismiss="toast" aria-label="Tutup"></button>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="toast"
+                            aria-label="Tutup">
+                    </button>
+
                 </div>
             </div>
         }
@@ -461,18 +568,29 @@
         @if (!string.IsNullOrWhiteSpace(errorMessage))
         {
             <div class="toast resto-toast toast-error mb-3"
-                 id="errorToast" role="alert">
+                 id="errorToast"
+                 role="alert">
+
                 <div class="d-flex align-items-center">
+
                     <div class="toast-body d-flex align-items-center gap-3">
+
                         <i class="bi bi-x-circle-fill resto-toast-icon"
                            style="color: #c0392b;"></i>
+
                         <div>
                             <strong class="d-block mb-1">Terjadi Kesalahan</strong>
                             <span>@errorMessage</span>
                         </div>
+
                     </div>
-                    <button type="button" class="btn-close"
-                            data-bs-dismiss="toast" aria-label="Tutup"></button>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="toast"
+                            aria-label="Tutup">
+                    </button>
+
                 </div>
             </div>
         }
@@ -480,38 +598,56 @@
         @if (!string.IsNullOrWhiteSpace(infoMessage))
         {
             <div class="toast resto-toast toast-info mb-3"
-                 id="infoToast" role="status">
+                 id="infoToast"
+                 role="status">
+
                 <div class="d-flex align-items-center">
+
                     <div class="toast-body d-flex align-items-center gap-3">
+
                         <i class="bi bi-info-circle-fill resto-toast-icon"
                            style="color: #2876a8;"></i>
+
                         <div>
                             <strong class="d-block mb-1">Informasi</strong>
                             <span>@infoMessage</span>
                         </div>
+
                     </div>
-                    <button type="button" class="btn-close"
-                            data-bs-dismiss="toast" aria-label="Tutup"></button>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="toast"
+                            aria-label="Tutup">
+                    </button>
+
                 </div>
             </div>
         }
+
     </div>
 
+    <!-- JAVASCRIPT -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+
             document.querySelectorAll(".resto-toast").forEach(function (element) {
+
                 bootstrap.Toast.getOrCreateInstance(element, {
                     autohide: true,
                     delay: 4500
                 }).show();
+
             });
+
         });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
 </body>
 </html>

@@ -1,0 +1,242 @@
+
+@model SistemInformasiRestoran.Models.Pembayaran
+
+@{
+    ViewData["Title"] = "Struk Pembayaran";
+
+    var detailPesanan =
+        ViewBag.DetailPesanan as List<SistemInformasiRestoran.Models.DetailPesanan>
+        ?? new List<SistemInformasiRestoran.Models.DetailPesanan>();
+}
+
+<style>
+    .struk-container {
+        max-width: 430px;
+        margin: 30px auto;
+        padding: 28px;
+        background: white;
+        border: 1px dashed #999;
+        color: #222;
+        font-family: Arial, sans-serif;
+    }
+
+    .struk-header {
+        text-align: center;
+        padding-bottom: 18px;
+        border-bottom: 1px dashed #999;
+    }
+
+    .struk-header h3 {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .struk-info {
+        padding: 15px 0;
+        border-bottom: 1px dashed #999;
+        font-size: 13px;
+    }
+
+    .struk-info div {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 7px;
+        gap: 12px;
+    }
+
+    .struk-table {
+        width: 100%;
+        font-size: 13px;
+        margin: 15px 0;
+    }
+
+    .struk-table th,
+    .struk-table td {
+        padding: 7px 3px;
+    }
+
+    .struk-total {
+        border-top: 1px dashed #999;
+        padding-top: 12px;
+        font-size: 13px;
+    }
+
+    .struk-total div {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        gap: 12px;
+    }
+
+    .struk-footer {
+        text-align: center;
+        border-top: 1px dashed #999;
+        margin-top: 15px;
+        padding-top: 15px;
+        font-size: 12px;
+    }
+
+    @@media print {
+        body {
+            background: white !important;
+        }
+
+        body * {
+            visibility: hidden;
+        }
+
+        .struk-container,
+        .struk-container * {
+            visibility: visible;
+        }
+
+        .struk-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            border: none;
+            padding: 10px;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        @@page {
+            size: 80mm auto;
+            margin: 5mm;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+
+    <div class="no-print d-flex justify-content-between align-items-center mt-3">
+        <a asp-controller="Laporan"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Kembali ke Laporan
+        </a>
+
+        <button onclick="window.print()"
+                class="btn btn-primary">
+            <i class="bi bi-printer"></i>
+            Cetak Struk
+        </button>
+    </div>
+
+    <div class="struk-container">
+
+        <div class="struk-header">
+            <h3>RESTO POS</h3>
+            <p class="mb-1">Struk Pembayaran</p>
+            <small>Terima kasih telah berkunjung</small>
+        </div>
+
+        <div class="struk-info">
+            <div>
+                <span>No. Transaksi</span>
+                <strong>#@Model.IdPembayaran</strong>
+            </div>
+
+            <div>
+                <span>No. Pesanan</span>
+                <strong>#@Model.IdPesanan</strong>
+            </div>
+
+            <div>
+                <span>Meja</span>
+                <strong>
+                    @(Model.Pesanan?.Meja?.NomorMeja ?? "-")
+                </strong>
+            </div>
+
+            <div>
+                <span>Tanggal</span>
+                <strong>
+                    @Model.TanggalPembayaran.ToString("dd/MM/yyyy")
+                </strong>
+            </div>
+
+            <div>
+                <span>Waktu</span>
+                <strong>
+                    @Model.TanggalPembayaran.ToString("HH:mm")
+                </strong>
+            </div>
+        </div>
+
+        <table class="struk-table">
+            <thead>
+                <tr>
+                    <th>Menu</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-end">Subtotal</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var detail in detailPesanan)
+                {
+                    <tr>
+                        <td>
+                            @(detail.Menu?.NamaMenu ?? "-")
+                            <br />
+                            <small>
+                                Rp @detail.HargaSatuan.ToString("N0")
+                            </small>
+                        </td>
+
+                        <td class="text-center">
+                            @detail.Jumlah
+                        </td>
+
+                        <td class="text-end">
+                            Rp @detail.Subtotal.ToString("N0")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="struk-total">
+            <div>
+                <strong>Total</strong>
+                <strong>
+                    Rp @Model.TotalBayar.ToString("N0")
+                </strong>
+            </div>
+
+            <div>
+                <span>Metode Pembayaran</span>
+                <strong>@Model.MetodePembayaran</strong>
+            </div>
+
+            <div>
+                <span>Uang Diterima</span>
+                <strong>
+                    Rp @Model.UangDiterima.ToString("N0")
+                </strong>
+            </div>
+
+            <div>
+                <span>Kembalian</span>
+                <strong>
+                    Rp @Model.Kembalian.ToString("N0")
+                </strong>
+            </div>
+        </div>
+
+        <div class="struk-footer">
+            <strong>Terima kasih atas kunjungan Anda!</strong>
+            <p class="mb-0 mt-1">
+                Semoga hari Anda menyenangkan.
+            </p>
+        </div>
+
+    </div>
+</div>

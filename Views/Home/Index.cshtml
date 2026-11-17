@@ -1,6 +1,10 @@
 ﻿
+@model SistemInformasiRestoran.Models.ViewModels.DashboardViewModel
+
 @{
     ViewData["Title"] = "Dashboard";
+
+    var budayaRupiah = System.Globalization.CultureInfo.GetCultureInfo("id-ID");
 }
 
 <div class="container-fluid px-0">
@@ -24,8 +28,7 @@
 
         <div class="resto-date">
             <i class="bi bi-calendar3 me-2"></i>
-            @DateTime.Now.ToString("dd MMMM yyyy",
-                System.Globalization.CultureInfo.GetCultureInfo("id-ID"))
+            @DateTime.Now.ToString("dd MMMM yyyy", budayaRupiah)
         </div>
     </div>
 
@@ -39,8 +42,8 @@
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <p class="mb-2 text-secondary">Total Menu</p>
-                            <h2 class="fw-bold mb-1">12</h2>
-                            <small class="text-secondary">Data contoh</small>
+                            <h2 class="fw-bold mb-1">@Model.TotalMenu</h2>
+                            <small class="text-secondary">Menu terdaftar</small>
                         </div>
 
                         <div class="resto-card-icon">
@@ -68,8 +71,8 @@
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <p class="mb-2 text-secondary">Total Meja</p>
-                            <h2 class="fw-bold mb-1">10</h2>
-                            <small class="text-secondary">Data contoh</small>
+                            <h2 class="fw-bold mb-1">@Model.TotalMeja</h2>
+                            <small class="text-secondary">Meja restoran</small>
                         </div>
 
                         <div class="resto-card-icon">
@@ -79,7 +82,7 @@
 
                     <div class="mt-4 small">
                         <i class="bi bi-grid me-1"></i>
-                        <span class="text-secondary">Meja restoran</span>
+                        <span class="text-secondary">Data meja terdaftar</span>
                     </div>
                 </div>
             </div>
@@ -92,8 +95,8 @@
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <p class="mb-2 text-secondary">Pesanan Hari Ini</p>
-                            <h2 class="fw-bold mb-1">8</h2>
-                            <small class="text-secondary">Data contoh</small>
+                            <h2 class="fw-bold mb-1">@Model.PesananHariIni</h2>
+                            <small class="text-secondary">Seluruh pesanan</small>
                         </div>
 
                         <div class="resto-card-icon">
@@ -116,11 +119,10 @@
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <p class="mb-2 text-secondary">Pendapatan Hari Ini</p>
-                            <h2 class="fw-bold mb-1"
-                                style="font-size: 1.65rem;">
-                                Rp450.000
+                            <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">
+                                @Model.PendapatanHariIni.ToString("C0", budayaRupiah)
                             </h2>
-                            <small class="text-secondary">Data contoh</small>
+                            <small class="text-secondary">Pembayaran berhasil</small>
                         </div>
 
                         <div class="resto-card-icon">
@@ -138,7 +140,44 @@
 
     </div>
 
-    <!-- Bagian Informasi -->
+    <!-- Ringkasan Keuangan -->
+    <div class="row g-4 mt-1">
+
+        <div class="col-12 col-md-4">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <p class="text-secondary mb-2">Total Penghasilan</p>
+                    <h4 class="fw-bold mb-1" style="color: #176c53;">
+                        @Model.TotalPendapatan.ToString("C0", budayaRupiah)
+                    </h4>
+                    <small class="text-secondary">Akumulasi seluruh pembayaran</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <p class="text-secondary mb-2">Total Transaksi</p>
+                    <h4 class="fw-bold mb-1">@Model.TotalTransaksi</h4>
+                    <small class="text-secondary">Pembayaran tercatat</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <p class="text-secondary mb-2">Menu Terjual</p>
+                    <h4 class="fw-bold mb-1">@Model.MenuTerjual</h4>
+                    <small class="text-secondary">Total item dari pesanan dibayar</small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Aktivitas dan Akses Cepat -->
     <div class="row g-4 mt-1">
 
         <div class="col-12 col-lg-7">
@@ -150,28 +189,65 @@
                         </div>
 
                         <div>
-                            <h5 class="fw-bold mb-1">Aktivitas Restoran</h5>
+                            <h5 class="fw-bold mb-1">Aktivitas Pembayaran Terbaru</h5>
                             <p class="text-secondary small mb-0">
-                                Informasi transaksi dan kegiatan restoran
+                                Lima pembayaran terakhir
                             </p>
                         </div>
                     </div>
 
-                    <div class="rounded-3 p-4 text-center"
-                         style="background: #f4f5ee;">
-                        <i class="bi bi-clipboard-data display-5"
-                           style="color: #176c53;"></i>
+                    @if (Model.AktivitasTerbaru.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Meja</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var aktivitas in Model.AktivitasTerbaru)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="fw-semibold">
+                                                    @aktivitas.TanggalPembayaran.ToString("dd/MM/yyyy")
+                                                </span>
+                                                <br />
+                                                <small class="text-secondary">
+                                                    @aktivitas.TanggalPembayaran.ToString("HH:mm")
+                                                </small>
+                                            </td>
+                                            <td>
+                                                @(aktivitas.Pesanan?.Meja?.NomorMeja ?? "-")
+                                            </td>
+                                            <td class="fw-semibold">
+                                                @aktivitas.TotalBayar.ToString("C0", budayaRupiah)
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="rounded-3 p-4 text-center"
+                             style="background: #f4f5ee;">
+                            <i class="bi bi-clipboard-data display-5"
+                               style="color: #176c53;"></i>
 
-                        <p class="fw-semibold mt-3 mb-1">
-                            Aktivitas belum tersedia
-                        </p>
+                            <p class="fw-semibold mt-3 mb-1">
+                                Belum ada pembayaran
+                            </p>
 
-                        <p class="text-secondary small mb-0">
-                            Riwayat transaksi akan ditampilkan setelah
-                            fitur pemesanan dan pembayaran terhubung
-                            ke database.
-                        </p>
-                    </div>
+                            <p class="text-secondary small mb-0">
+                                Aktivitas pembayaran akan muncul setelah transaksi berhasil dilakukan.
+                            </p>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -204,24 +280,24 @@
                             <i class="bi bi-chevron-right ms-auto"></i>
                         </a>
 
-                        <a asp-controller="Home"
-                           asp-action="Menu"
+                        <a asp-controller="Pemesanan"
+                           asp-action="Index"
                            class="resto-quick-link">
                             <i class="bi bi-cart3"></i>
                             <span>
                                 <strong>Pemesanan</strong>
-                                <small>Buka halaman pemesanan</small>
+                                <small>Kelola pesanan pelanggan</small>
                             </span>
                             <i class="bi bi-chevron-right ms-auto"></i>
                         </a>
 
-                        <a asp-controller="Database"
+                        <a asp-controller="Laporan"
                            asp-action="Index"
                            class="resto-quick-link">
-                            <i class="bi bi-database-check"></i>
+                            <i class="bi bi-bar-chart"></i>
                             <span>
-                                <strong>Koneksi Database</strong>
-                                <small>Periksa koneksi aplikasi</small>
+                                <strong>Laporan</strong>
+                                <small>Lihat laporan omzet restoran</small>
                             </span>
                             <i class="bi bi-chevron-right ms-auto"></i>
                         </a>
@@ -232,14 +308,52 @@
 
     </div>
 
-    <!-- Catatan -->
-    <div class="mt-4 p-3 rounded-3"
-         style="background: #e3efe6; color: #31564b;">
-        <i class="bi bi-info-circle me-2"></i>
-        <small>
-            Angka pada kartu Dashboard saat ini masih berupa data contoh,
-            belum mengambil nilai langsung dari database.
-        </small>
+    <!-- Grafik Omzet -->
+    <div class="card mt-4">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="resto-card-icon">
+                    <i class="bi bi-bar-chart-line"></i>
+                </div>
+
+                <div>
+                    <h5 class="fw-bold mb-1">Omzet 7 Hari Terakhir</h5>
+                    <p class="text-secondary small mb-0">
+                        Ringkasan pendapatan berdasarkan pembayaran
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-3 align-items-end">
+                @foreach (var item in Model.GrafikOmzet)
+                {
+                    var omzetMaksimal = Model.GrafikOmzet.Any()
+                        ? Model.GrafikOmzet.Max(x => x.TotalOmzet)
+                        : 0;
+
+                    var tinggi = omzetMaksimal > 0
+                        ? (double)(item.TotalOmzet / omzetMaksimal) * 100
+                        : 0;
+
+                    <div class="col">
+                        <div class="text-center small fw-semibold mb-2">
+                            @item.TotalOmzet.ToString("N0", budayaRupiah)
+                        </div>
+
+                        <div class="d-flex align-items-end justify-content-center rounded-3"
+                             style="height: 150px; background: #f4f5ee;">
+                            <div class="w-75 rounded-top-3"
+                                 style="height: @(tinggi)% ; min-height: @(item.TotalOmzet > 0 ? "5px" : "0"); background: #176c53;">
+                            </div>
+                        </div>
+
+                        <div class="text-center small text-secondary mt-2">
+                            @item.Tanggal.ToString("dd/MM")
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 
 </div>

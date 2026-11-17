@@ -1,0 +1,334 @@
+
+@model SistemInformasiRestoran.Models.ViewModels.LaporanViewModel
+
+@{
+    ViewData["Title"] = "Laporan";
+}
+
+<div class="container-fluid py-3">
+
+    <div class="mb-4">
+        <h2 class="fw-bold">Laporan Restoran</h2>
+        <p class="text-muted mb-0">
+            Ringkasan penjualan dan transaksi restoran.
+        </p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- FILTER TANGGAL -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form asp-controller="Laporan"
+                  asp-action="Index"
+                  method="get"
+                  class="row g-3 align-items-end">
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">
+                        Tanggal Mulai
+                    </label>
+                    <input type="date"
+                           name="tanggalMulai"
+                           class="form-control"
+                           value="@Model.TanggalMulai.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">
+                        Tanggal Akhir
+                    </label>
+                    <input type="date"
+                           name="tanggalAkhir"
+                           class="form-control"
+                           value="@Model.TanggalAkhir.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <div class="col-md-4">
+                    <button type="submit"
+                            class="btn btn-primary w-100">
+                        <i class="bi bi-funnel me-1"></i>
+                        Tampilkan Laporan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- RINGKASAN OMZET -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-2">
+                                Total Omzet
+                            </p>
+                            <h3 class="fw-bold text-success mb-0">
+                                Rp @Model.TotalOmzet.ToString("N0")
+                            </h3>
+                        </div>
+                        <div class="fs-2 text-success">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Periode @Model.TanggalMulai.ToString("dd/MM/yyyy")
+                        - @Model.TanggalAkhir.ToString("dd/MM/yyyy")
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-2">
+                                Jumlah Transaksi
+                            </p>
+                            <h3 class="fw-bold mb-0">
+                                @Model.RiwayatPembayaran.Count
+                            </h3>
+                        </div>
+                        <div class="fs-2 text-primary">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Transaksi pembayaran berhasil
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-2">
+                                Menu Terjual
+                            </p>
+                            <h3 class="fw-bold mb-0">
+                                @Model.MenuTerlaris.Sum(m => m.TotalTerjual)
+                            </h3>
+                        </div>
+                        <div class="fs-2 text-warning">
+                            <i class="bi bi-basket"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Total seluruh item yang terjual
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MENU TERLARIS -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0">
+                <i class="bi bi-trophy text-warning me-2"></i>
+                Menu Terlaris
+            </h5>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No.</th>
+                            <th>Nama Menu</th>
+                            <th class="text-center">Jumlah Terjual</th>
+                            <th class="text-end">Total Pendapatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.MenuTerlaris.Any())
+                        {
+                            var no = 1;
+
+                            @foreach (var menu in Model.MenuTerlaris)
+                            {
+                                <tr>
+                                    <td>@no</td>
+                                    <td class="fw-semibold">
+                                        @menu.NamaMenu
+                                    </td>
+                                    <td class="text-center">
+                                        @menu.TotalTerjual
+                                    </td>
+                                    <td class="text-end">
+                                        Rp @menu.TotalPendapatan.ToString("N0")
+                                    </td>
+                                </tr>
+                                no++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4"
+                                    class="text-center text-muted py-4">
+                                    Belum ada data menu terjual pada periode ini.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- OMZET HARIAN -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0">
+                <i class="bi bi-calendar-check text-primary me-2"></i>
+                Rekapitulasi Omzet Harian
+            </h5>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No.</th>
+                            <th>Tanggal</th>
+                            <th class="text-center">Jumlah Transaksi</th>
+                            <th class="text-end">Total Omzet</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.OmzetHarian.Any())
+                        {
+                            var no = 1;
+
+                            @foreach (var omzet in Model.OmzetHarian)
+                            {
+                                <tr>
+                                    <td>@no</td>
+                                    <td>
+                                        @omzet.Tanggal.ToString("dd MMMM yyyy")
+                                    </td>
+                                    <td class="text-center">
+                                        @omzet.JumlahTransaksi
+                                    </td>
+                                    <td class="text-end fw-semibold text-success">
+                                        Rp @omzet.TotalOmzet.ToString("N0")
+                                    </td>
+                                </tr>
+                                no++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4"
+                                    class="text-center text-muted py-4">
+                                    Belum ada transaksi pada periode ini.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIWAYAT PEMBAYARAN -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0">
+                <i class="bi bi-receipt-cutoff text-success me-2"></i>
+                Riwayat Pembayaran
+            </h5>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No.</th>
+                            <th>Tanggal Pembayaran</th>
+                            <th>Meja</th>
+                            <th>Metode</th>
+                            <th class="text-end">Total Bayar</th>
+                            <th class="text-center">Struk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.RiwayatPembayaran.Any())
+                        {
+                            var no = 1;
+
+                            @foreach (var pembayaran in Model.RiwayatPembayaran)
+                            {
+                                <tr>
+                                    <td>@no</td>
+                                    <td>
+                                        @pembayaran.TanggalPembayaran.ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+                                    <td>
+                                        @(pembayaran.Pesanan?.Meja?.NomorMeja ?? "-")
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">
+                                            @pembayaran.MetodePembayaran
+                                        </span>
+                                    </td>
+                                    <td class="text-end fw-semibold">
+                                        Rp @pembayaran.TotalBayar.ToString("N0")
+                                    </td>
+                                    <td class="text-center">
+                                        <a asp-controller="Laporan"
+                                           asp-action="Struk"
+                                           asp-route-id="@pembayaran.IdPembayaran"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-printer"></i>
+                                            Cetak
+                                        </a>
+                                    </td>
+                                </tr>
+                                no++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6"
+                                    class="text-center text-muted py-4">
+                                    Belum ada riwayat pembayaran.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>

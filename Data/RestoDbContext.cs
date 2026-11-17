@@ -12,11 +12,20 @@ namespace SistemInformasiRestoran.Data
         }
 
         public DbSet<Kategori> Kategori { get; set; }
+
         public DbSet<Menu> Menu { get; set; }
+
         public DbSet<Meja> Meja { get; set; }
+
         public DbSet<Pengguna> Pengguna { get; set; }
+
         public DbSet<Pesanan> Pesanan { get; set; }
+
         public DbSet<DetailPesanan> DetailPesanan { get; set; }
+
         public DbSet<Pembayaran> Pembayaran { get; set; }
+
+        // Menyimpan reservasi stok sementara dari keranjang.
+        public DbSet<ReservasiStok> ReservasiStok { get; set; }
     }
 }

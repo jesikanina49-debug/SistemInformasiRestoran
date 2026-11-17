@@ -1,0 +1,235 @@
+
+@model SistemInformasiRestoran.Models.Pesanan
+
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Detail Pembayaran";
+
+    var daftarDetail = ViewBag.DetailPesanan as
+        List<SistemInformasiRestoran.Models.DetailPesanan>
+        ?? new List<SistemInformasiRestoran.Models.DetailPesanan>();
+
+    decimal total = daftarDetail.Sum(d => d.Subtotal);
+
+    // Menggunakan format angka internasional agar JavaScript bisa membacanya.
+    string totalAngka = total.ToString(CultureInfo.InvariantCulture);
+}
+
+<div class="container-fluid py-3">
+
+    <div class="mb-4">
+        <h2 class="fw-bold">Detail Pembayaran</h2>
+        <p class="text-muted">Periksa pesanan sebelum menyelesaikan pembayaran.</p>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="row g-4">
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+
+                    <h5 class="fw-bold mb-3">Informasi Pesanan</h5>
+
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">ID Pesanan</div>
+                        <div class="col-6 fw-semibold">#@Model.IdPesanan</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Nomor Meja</div>
+                        <div class="col-6 fw-semibold">
+                            @(Model.Meja?.NomorMeja ?? "-")
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6 text-muted">Tanggal</div>
+                        <div class="col-6 fw-semibold">
+                            @Model.TanggalPesanan.ToString("dd/MM/yyyy HH:mm")
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <h5 class="fw-bold mb-3">Rincian Menu</h5>
+
+                    @if (!daftarDetail.Any())
+                    {
+                        <p class="text-muted">Tidak ada rincian menu.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nama Menu</th>
+                                        <th>Harga</th>
+                                        <th>Jumlah</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach (var item in daftarDetail)
+                                    {
+                                        <tr>
+                                            <td>@(item.Menu?.NamaMenu ?? "-")</td>
+                                            <td>Rp @item.HargaSatuan.ToString("N0")</td>
+                                            <td>@item.Jumlah</td>
+                                            <td class="fw-semibold">
+                                                Rp @item.Subtotal.ToString("N0")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="fw-bold fs-5">Total Tagihan</span>
+                        <span class="fw-bold fs-4 text-primary">
+                            Rp @total.ToString("N0")
+                        </span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+
+                    <h5 class="fw-bold mb-3">Form Pembayaran</h5>
+
+                    <form asp-controller="Pembayaran"
+                          asp-action="Proses"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden"
+                               name="idPesanan"
+                               value="@Model.IdPesanan" />
+
+                        <input type="hidden"
+                               id="totalTagihan"
+                               value="@totalAngka" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Metode Pembayaran
+                            </label>
+
+                            <select name="metodePembayaran"
+                                    id="metodePembayaran"
+                                    class="form-select"
+                                    required>
+                                <option value="Tunai">Tunai</option>
+                                <option value="Transfer">Transfer</option>
+                                <option value="QRIS">QRIS</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Total Tagihan
+                            </label>
+
+                            <input type="text"
+                                   class="form-control"
+                                   value="Rp @total.ToString("N0")"
+                                   readonly />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Uang Diterima
+                            </label>
+
+                            <input type="number"
+                                   name="uangDiterima"
+                                   id="uangDiterima"
+                                   class="form-control"
+                                   min="@totalAngka"
+                                   step="1"
+                                   value="@totalAngka"
+                                   required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Kembalian
+                            </label>
+
+                            <input type="text"
+                                   id="kembalian"
+                                   class="form-control fw-bold text-success"
+                                   value="Rp 0"
+                                   readonly />
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-success w-100"
+                                onclick="return confirm('Apakah pembayaran sudah benar?')">
+                            Proses Pembayaran
+                        </button>
+
+                        <a asp-action="Index"
+                           class="btn btn-outline-secondary w-100 mt-2">
+                            Kembali
+                        </a>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const total = Number(
+            document.getElementById("totalTagihan").value
+        );
+
+        const uang = document.getElementById("uangDiterima");
+        const metode = document.getElementById("metodePembayaran");
+        const kembalian = document.getElementById("kembalian");
+
+        function hitungKembalian() {
+            const diterima = Number(uang.value) || 0;
+
+            if (metode.value !== "Tunai") {
+                uang.value = total;
+                uang.readOnly = true;
+                kembalian.value = "Rp 0";
+                return;
+            }
+
+            uang.readOnly = false;
+
+            const hasil = diterima - total;
+
+            kembalian.value = "Rp " +
+                Math.max(hasil, 0).toLocaleString("id-ID");
+        }
+
+        uang.addEventListener("input", hitungKembalian);
+        metode.addEventListener("change", hitungKembalian);
+
+        hitungKembalian();
+    </script>
+}

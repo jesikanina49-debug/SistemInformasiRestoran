@@ -28,6 +28,10 @@ namespace SistemInformasiRestoran.Controllers
             _environment = environment;
         }
 
+        // =========================
+        // LOGIN
+        // =========================
+
         [AllowAnonymous]
         [HttpGet]
         public IActionResult Login()
@@ -122,6 +126,10 @@ namespace SistemInformasiRestoran.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        // =========================
+        // LOGOUT
+        // =========================
+
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -136,6 +144,10 @@ namespace SistemInformasiRestoran.Controllers
             return RedirectToAction("Login", "Account");
         }
 
+        // =========================
+        // ACCESS DENIED
+        // =========================
+
         [AllowAnonymous]
         [HttpGet]
         public IActionResult AccessDenied()
@@ -144,6 +156,115 @@ namespace SistemInformasiRestoran.Controllers
                 "Akses ditolak. Kamu tidak memiliki izin " +
                 "untuk membuka halaman ini.");
         }
+
+        // =========================
+        // TAMBAH AKUN
+        // KHUSUS MANAGER
+        // =========================
+
+        [Authorize(Roles = "Manager")]
+        [HttpGet]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [Authorize(Roles = "Manager")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(
+            string nama,
+            string username,
+            string password,
+            string konfirmasiPassword,
+            string role)
+        {
+            if (string.IsNullOrWhiteSpace(nama) ||
+                string.IsNullOrWhiteSpace(username) ||
+                string.IsNullOrWhiteSpace(password) ||
+                string.IsNullOrWhiteSpace(konfirmasiPassword) ||
+                string.IsNullOrWhiteSpace(role))
+            {
+                ViewBag.Error = "Semua kolom wajib diisi.";
+                return View();
+            }
+
+            nama = nama.Trim();
+            username = username.Trim();
+
+            if (nama.Length > 100 || username.Length > 50)
+            {
+                ViewBag.Error =
+                    "Nama maksimal 100 karakter dan username maksimal 50 karakter.";
+
+                return View();
+            }
+
+            if (role != "Manager" && role != "Kasir")
+            {
+                ViewBag.Error = "Role akun tidak valid.";
+                return View();
+            }
+
+            if (password.Length < 12)
+            {
+                ViewBag.Error = "Password minimal 12 karakter.";
+                return View();
+            }
+
+            if (password != konfirmasiPassword)
+            {
+                ViewBag.Error = "Konfirmasi password tidak sama.";
+                return View();
+            }
+
+            bool usernameSudahAda = await _context.Pengguna
+                .AnyAsync(u => u.Username == username);
+
+            if (usernameSudahAda)
+            {
+                ViewBag.Error = "Username sudah digunakan.";
+                return View();
+            }
+
+            var penggunaBaru = new Pengguna
+            {
+                NamaUser = nama,
+                Username = username,
+                Role = role
+            };
+
+            penggunaBaru.PasswordHash =
+                _passwordHasher.HashPassword(
+                    penggunaBaru,
+                    password);
+
+            _context.Pengguna.Add(penggunaBaru);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                _context.Entry(penggunaBaru).State =
+                    EntityState.Detached;
+
+                ViewBag.Error =
+                    "Akun gagal dibuat. Username mungkin sudah digunakan.";
+
+                return View();
+            }
+
+            TempData["SuccessMessage"] =
+                $"Akun {nama} berhasil ditambahkan.";
+
+            return RedirectToAction(nameof(Create));
+        }
+
+        // =========================
+        // SETUP MANAGER PERTAMA
+        // =========================
 
         [AllowAnonymous]
         [HttpGet]
@@ -197,20 +318,19 @@ namespace SistemInformasiRestoran.Controllers
             {
                 ViewBag.Error =
                     "Nama maksimal 100 karakter dan username maksimal 50 karakter.";
+
                 return View();
             }
 
             if (password.Length < 12)
             {
-                ViewBag.Error =
-                    "Password minimal 12 karakter.";
+                ViewBag.Error = "Password minimal 12 karakter.";
                 return View();
             }
 
             if (password != konfirmasiPassword)
             {
-                ViewBag.Error =
-                    "Konfirmasi password tidak sama.";
+                ViewBag.Error = "Konfirmasi password tidak sama.";
                 return View();
             }
 
@@ -222,7 +342,9 @@ namespace SistemInformasiRestoran.Controllers
             };
 
             pengguna.PasswordHash =
-                _passwordHasher.HashPassword(pengguna, password);
+                _passwordHasher.HashPassword(
+                    pengguna,
+                    password);
 
             _context.Pengguna.Add(pengguna);
 

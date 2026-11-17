@@ -1,4 +1,4 @@
-
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -29,7 +29,7 @@ namespace SistemInformasiRestoran.Controllers
             _environment = environment;
         }
 
-        // Menampilkan daftar menu.
+        // Menampilkan daftar menu dan seluruh kategori.
         public async Task<IActionResult> Index()
         {
             var daftarMenu = await _context.Menu
@@ -37,6 +37,13 @@ namespace SistemInformasiRestoran.Controllers
                 .AsNoTracking()
                 .OrderBy(m => m.NamaMenu)
                 .ToListAsync();
+
+            var daftarKategori = await _context.Kategori
+                .AsNoTracking()
+                .OrderBy(k => k.NamaKategori)
+                .ToListAsync();
+
+            ViewBag.DaftarKategori = daftarKategori;
 
             return View(daftarMenu);
         }
@@ -70,10 +77,7 @@ namespace SistemInformasiRestoran.Controllers
                 }
             }
 
-            if (!ValidasiGambar(fileGambar))
-            {
-                // Pesan kesalahan ditambahkan oleh ValidasiGambar.
-            }
+            ValidasiGambar(fileGambar);
 
             if (!ModelState.IsValid)
             {
@@ -90,6 +94,7 @@ namespace SistemInformasiRestoran.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Menu berhasil ditambahkan.";
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -106,6 +111,7 @@ namespace SistemInformasiRestoran.Controllers
             }
 
             await MuatKategoriAsync(menu.IdKategori);
+
             return View(menu);
         }
 
@@ -114,11 +120,41 @@ namespace SistemInformasiRestoran.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
-            int id, Menu menu, IFormFile? fileGambar)
+            int id,
+            Menu menu,
+            string? harga,
+            IFormFile? fileGambar)
         {
             if (id != menu.IdMenu)
             {
                 return BadRequest();
+            }
+
+            // Menghapus hasil binding otomatis untuk Harga.
+            // Harga akan dibaca dan dikonversi secara manual.
+            ModelState.Remove(nameof(Menu.Harga));
+
+            // Membaca harga dengan format titik desimal.
+            if (string.IsNullOrWhiteSpace(harga) ||
+                !decimal.TryParse(
+                    harga,
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out decimal hargaMenu))
+            {
+                ModelState.AddModelError(
+                    nameof(Menu.Harga),
+                    "Harga harus berupa angka yang valid. Contoh: 15000 atau 15000.50");
+            }
+            else if (hargaMenu < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(Menu.Harga),
+                    "Harga tidak boleh kurang dari 0.");
+            }
+            else
+            {
+                menu.Harga = hargaMenu;
             }
 
             if (ModelState.IsValid)
@@ -134,10 +170,7 @@ namespace SistemInformasiRestoran.Controllers
                 }
             }
 
-            if (!ValidasiGambar(fileGambar))
-            {
-                // Pesan kesalahan ditambahkan oleh ValidasiGambar.
-            }
+            ValidasiGambar(fileGambar);
 
             if (!ModelState.IsValid)
             {
@@ -181,16 +214,19 @@ namespace SistemInformasiRestoran.Controllers
                 throw;
             }
 
-            if (gambarBaru != null && !string.IsNullOrEmpty(gambarLama))
+            if (gambarBaru != null &&
+                !string.IsNullOrEmpty(gambarLama))
             {
                 HapusFileGambar(gambarLama);
             }
 
             TempData["SuccessMessage"] = "Menu berhasil diperbarui.";
+
             return RedirectToAction(nameof(Index));
         }
 
-        // Menghapus menu.
+        // Mengaktifkan atau menonaktifkan menu.
+        // Data menu tidak dihapus permanen agar riwayat transaksi aman.
         [Authorize(Roles = "Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -201,28 +237,31 @@ namespace SistemInformasiRestoran.Controllers
             if (menu == null)
             {
                 TempData["ErrorMessage"] = "Menu tidak ditemukan.";
+
                 return RedirectToAction(nameof(Index));
             }
 
-            string? gambarLama = menu.Gambar;
-
-            _context.Menu.Remove(menu);
-
             try
             {
+                menu.StatusTersedia = !menu.StatusTersedia;
+
                 await _context.SaveChangesAsync();
 
-                if (!string.IsNullOrEmpty(gambarLama))
+                if (menu.StatusTersedia)
                 {
-                    HapusFileGambar(gambarLama);
+                    TempData["SuccessMessage"] =
+                        $"Menu {menu.NamaMenu} berhasil diaktifkan kembali.";
                 }
-
-                TempData["SuccessMessage"] = "Menu berhasil dihapus.";
+                else
+                {
+                    TempData["InfoMessage"] =
+                        $"Menu {menu.NamaMenu} berhasil dinonaktifkan.";
+                }
             }
             catch (DbUpdateException)
             {
                 TempData["ErrorMessage"] =
-                    "Menu tidak dapat dihapus karena mungkin sudah digunakan dalam transaksi.";
+                    "Status menu gagal diperbarui. Silakan coba kembali.";
             }
 
             return RedirectToAction(nameof(Index));
@@ -241,6 +280,7 @@ namespace SistemInformasiRestoran.Controllers
                 ModelState.AddModelError(
                     "fileGambar",
                     "Ukuran gambar maksimal 2 MB.");
+
                 return false;
             }
 
@@ -252,6 +292,7 @@ namespace SistemInformasiRestoran.Controllers
                 ModelState.AddModelError(
                     "fileGambar",
                     "Format gambar harus JPG, JPEG, PNG, atau WEBP.");
+
                 return false;
             }
 
@@ -268,8 +309,11 @@ namespace SistemInformasiRestoran.Controllers
 
             Directory.CreateDirectory(folder);
 
-            string ekstensi = Path.GetExtension(file.FileName).ToLowerInvariant();
+            string ekstensi = Path.GetExtension(file.FileName)
+                .ToLowerInvariant();
+
             string namaFile = $"{Guid.NewGuid():N}{ekstensi}";
+
             string lokasiFile = Path.Combine(folder, namaFile);
 
             await using var stream = new FileStream(
@@ -283,7 +327,6 @@ namespace SistemInformasiRestoran.Controllers
         // Menghapus file gambar dari folder upload.
         private void HapusFileGambar(string namaFile)
         {
-            // Hanya menerima nama file, bukan jalur dari pengguna.
             if (Path.GetFileName(namaFile) != namaFile)
             {
                 return;
@@ -302,7 +345,7 @@ namespace SistemInformasiRestoran.Controllers
             }
         }
 
-        // Mengambil kategori untuk formulir.
+        // Mengambil kategori untuk formulir tambah dan edit.
         private async Task MuatKategoriAsync(int? idTerpilih = null)
         {
             var kategori = await _context.Kategori

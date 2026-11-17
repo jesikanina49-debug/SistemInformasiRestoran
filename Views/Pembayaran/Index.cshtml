@@ -1,0 +1,210 @@
+
+@model IEnumerable<SistemInformasiRestoran.Models.Pesanan>
+
+@using System.Security.Claims
+
+@{
+    ViewData["Title"] = "Pembayaran";
+
+    bool isManager = User.IsInRole("Manager");
+}
+
+<style>
+    .payment-table-wrapper {
+        max-height: 65vh;
+        overflow: auto;
+        border-radius: 8px;
+    }
+
+    .payment-table {
+        margin-bottom: 0;
+        white-space: nowrap;
+    }
+
+    .payment-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #f8f9fa;
+        box-shadow: 0 1px 0 #dee2e6;
+    }
+
+    .payment-table th,
+    .payment-table td {
+        padding: 14px 16px;
+        vertical-align: middle;
+    }
+
+    .payment-table-wrapper::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .payment-table-wrapper::-webkit-scrollbar-thumb {
+        background: #c5cec7;
+        border-radius: 10px;
+    }
+
+    .payment-table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #8c9b90;
+    }
+
+    .payment-table-wrapper::-webkit-scrollbar-track {
+        background: #f1f3f1;
+    }
+
+    .payment-action {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    @@media (max-width: 768px) {
+        .payment-table-wrapper {
+            max-height: 60vh;
+        }
+    }
+</style>
+
+<div class="container-fluid py-3">
+
+    <div class="mb-4">
+        <h2 class="fw-bold">Pembayaran</h2>
+        <p class="text-muted">
+            Daftar pesanan yang belum diselesaikan pembayarannya.
+        </p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+
+            @if (Model == null || !Model.Any())
+            {
+                <div class="text-center py-5">
+                    <h5 class="fw-semibold">Belum Ada Pesanan</h5>
+
+                    <p class="text-muted mb-0">
+                        Pesanan yang belum dibayar akan muncul di halaman ini.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="payment-table-wrapper">
+
+                    <table class="table table-hover align-middle payment-table">
+
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>ID Pesanan</th>
+                                <th>Meja</th>
+                                <th>Tanggal Pesanan</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @{
+                                int nomor = 1;
+                            }
+
+                            @foreach (var pesanan in Model)
+                            {
+                                <tr>
+                                    <td>@nomor</td>
+
+                                    <td>
+                                        #@pesanan.IdPesanan
+                                    </td>
+
+                                    <td>
+                                        @(pesanan.Meja?.NomorMeja ?? "-")
+                                    </td>
+
+                                    <td>
+                                        @pesanan.TanggalPesanan.ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+
+                                    <td class="fw-semibold">
+                                        Rp @pesanan.Total.ToString("N0")
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-warning text-dark">
+                                            @pesanan.StatusPesanan
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="payment-action">
+
+                                            <a asp-controller="Pembayaran"
+                                               asp-action="Detail"
+                                               asp-route-id="@pesanan.IdPesanan"
+                                               class="btn btn-primary btn-sm">
+                                                Proses Pembayaran
+                                            </a>
+
+                                            @if (isManager)
+                                            {
+                                                <form asp-controller="Pembayaran"
+                                                      asp-action="Hapus"
+                                                      asp-route-id="@pesanan.IdPesanan"
+                                                      method="post"
+                                                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus pesanan #@pesanan.IdPesanan? Detail pesanan juga akan dihapus.');">
+
+                                                    @Html.AntiForgeryToken()
+
+                                                    <button type="submit"
+                                                            class="btn btn-danger btn-sm">
+                                                        <i class="bi bi-trash me-1"></i>
+                                                        Hapus
+                                                    </button>
+
+                                                </form>
+                                            }
+
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                nomor++;
+                            }
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="text-muted small mt-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Gulir tabel ke bawah untuk melihat transaksi lainnya.
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
