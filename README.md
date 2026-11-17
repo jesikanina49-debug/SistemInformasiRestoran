@@ -1,4 +1,4 @@
-# Daftar Anggota Kelompok 3
+# Daftar Anggota Kelompok 8
 
 | No. | NIM | Nama | Peran |
 |---|---|---|---|
