@@ -28,6 +28,40 @@ namespace SistemInformasiRestoran.Controllers
             _environment = environment;
         }
 
+        // Membuat catatan Audit Trail.
+        private AuditTrail BuatAudit(
+            string aktivitas,
+            string namaTabel,
+            int? idData,
+            string keterangan,
+            int? idUser = null,
+            string? namaUser = null)
+        {
+            var idDariLogin =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            int? idAktif = idUser;
+
+            if (idAktif == null &&
+                int.TryParse(idDariLogin, out int hasil))
+            {
+                idAktif = hasil;
+            }
+
+            return new AuditTrail
+            {
+                IdUser = idAktif,
+                NamaUser = namaUser ??
+                    User.Identity?.Name ??
+                    "SYSTEM",
+                Aktivitas = aktivitas,
+                NamaTabel = namaTabel,
+                IdData = idData,
+                Keterangan = keterangan,
+                TanggalAktivitas = DateTime.Now
+            };
+        }
+
         // =========================
         // LOGIN
         // =========================
@@ -54,18 +88,23 @@ namespace SistemInformasiRestoran.Controllers
             if (string.IsNullOrWhiteSpace(username) ||
                 string.IsNullOrWhiteSpace(password))
             {
-                ViewBag.Error = "Username dan password wajib diisi.";
+                ViewBag.Error =
+                    "Username dan password wajib diisi.";
+
                 return View();
             }
 
             var pengguna = await _context.Pengguna
-                .SingleOrDefaultAsync(
-                    u => u.Username == username.Trim());
+                .SingleOrDefaultAsync(u =>
+                    u.Username == username.Trim() &&
+                    !u.IsDeleted);
 
             if (pengguna == null ||
                 string.IsNullOrWhiteSpace(pengguna.PasswordHash))
             {
-                ViewBag.Error = "Username atau password salah.";
+                ViewBag.Error =
+                    "Username atau password salah.";
+
                 return View();
             }
 
@@ -76,7 +115,9 @@ namespace SistemInformasiRestoran.Controllers
 
             if (hasil == PasswordVerificationResult.Failed)
             {
-                ViewBag.Error = "Username atau password salah.";
+                ViewBag.Error =
+                    "Username atau password salah.";
+
                 return View();
             }
 
@@ -87,13 +128,31 @@ namespace SistemInformasiRestoran.Controllers
                 return View();
             }
 
-            if (hasil == PasswordVerificationResult.SuccessRehashNeeded)
+            await using var transaksi =
+                await _context.Database.BeginTransactionAsync();
+
+            if (hasil ==
+                PasswordVerificationResult.SuccessRehashNeeded)
             {
                 pengguna.PasswordHash =
-                    _passwordHasher.HashPassword(pengguna, password);
+                    _passwordHasher.HashPassword(
+                        pengguna,
+                        password);
 
                 await _context.SaveChangesAsync();
             }
+
+            _context.AuditTrail.Add(BuatAudit(
+                "Login",
+                "user",
+                pengguna.IdUser,
+                $"Pengguna {pengguna.Username} berhasil login.",
+                pengguna.IdUser,
+                pengguna.Username
+            ));
+
+            await _context.SaveChangesAsync();
+            await transaksi.CommitAsync();
 
             var claims = new List<Claim>
             {
@@ -135,6 +194,23 @@ namespace SistemInformasiRestoran.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            var idUser = int.TryParse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                out int hasil) ? hasil : (int?)null;
+
+            var namaUser = User.Identity?.Name ?? "SYSTEM";
+
+            _context.AuditTrail.Add(BuatAudit(
+                "Logout",
+                "user",
+                idUser,
+                $"Pengguna {namaUser} berhasil logout.",
+                idUser,
+                namaUser
+            ));
+
+            await _context.SaveChangesAsync();
+
             await HttpContext.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -208,13 +284,17 @@ namespace SistemInformasiRestoran.Controllers
 
             if (password.Length < 12)
             {
-                ViewBag.Error = "Password minimal 12 karakter.";
+                ViewBag.Error =
+                    "Password minimal 12 karakter.";
+
                 return View();
             }
 
             if (password != konfirmasiPassword)
             {
-                ViewBag.Error = "Konfirmasi password tidak sama.";
+                ViewBag.Error =
+                    "Konfirmasi password tidak sama.";
+
                 return View();
             }
 
@@ -223,7 +303,9 @@ namespace SistemInformasiRestoran.Controllers
 
             if (usernameSudahAda)
             {
-                ViewBag.Error = "Username sudah digunakan.";
+                ViewBag.Error =
+                    "Username sudah digunakan.";
+
                 return View();
             }
 
@@ -231,7 +313,8 @@ namespace SistemInformasiRestoran.Controllers
             {
                 NamaUser = nama,
                 Username = username,
-                Role = role
+                Role = role,
+                IsDeleted = false
             };
 
             penggunaBaru.PasswordHash =
@@ -239,14 +322,29 @@ namespace SistemInformasiRestoran.Controllers
                     penggunaBaru,
                     password);
 
+            await using var transaksi =
+                await _context.Database.BeginTransactionAsync();
+
             _context.Pengguna.Add(penggunaBaru);
 
             try
             {
                 await _context.SaveChangesAsync();
+
+                _context.AuditTrail.Add(BuatAudit(
+                    "Tambah Akun",
+                    "user",
+                    penggunaBaru.IdUser,
+                    $"Manager menambahkan akun {username} dengan role {role}."
+                ));
+
+                await _context.SaveChangesAsync();
+                await transaksi.CommitAsync();
             }
             catch (DbUpdateException)
             {
+                await transaksi.RollbackAsync();
+
                 _context.Entry(penggunaBaru).State =
                     EntityState.Detached;
 
@@ -313,8 +411,10 @@ namespace SistemInformasiRestoran.Controllers
                 return View();
             }
 
-            if (nama.Trim().Length > 100 ||
-                username.Trim().Length > 50)
+            nama = nama.Trim();
+            username = username.Trim();
+
+            if (nama.Length > 100 || username.Length > 50)
             {
                 ViewBag.Error =
                     "Nama maksimal 100 karakter dan username maksimal 50 karakter.";
@@ -324,21 +424,26 @@ namespace SistemInformasiRestoran.Controllers
 
             if (password.Length < 12)
             {
-                ViewBag.Error = "Password minimal 12 karakter.";
+                ViewBag.Error =
+                    "Password minimal 12 karakter.";
+
                 return View();
             }
 
             if (password != konfirmasiPassword)
             {
-                ViewBag.Error = "Konfirmasi password tidak sama.";
+                ViewBag.Error =
+                    "Konfirmasi password tidak sama.";
+
                 return View();
             }
 
             var pengguna = new Pengguna
             {
-                NamaUser = nama.Trim(),
-                Username = username.Trim(),
-                Role = "Manager"
+                NamaUser = nama,
+                Username = username,
+                Role = "Manager",
+                IsDeleted = false
             };
 
             pengguna.PasswordHash =
@@ -346,14 +451,31 @@ namespace SistemInformasiRestoran.Controllers
                     pengguna,
                     password);
 
+            await using var transaksi =
+                await _context.Database.BeginTransactionAsync();
+
             _context.Pengguna.Add(pengguna);
 
             try
             {
                 await _context.SaveChangesAsync();
+
+                _context.AuditTrail.Add(BuatAudit(
+                    "Setup Manager",
+                    "user",
+                    pengguna.IdUser,
+                    $"Membuat akun Manager pertama: {username}.",
+                    pengguna.IdUser,
+                    username
+                ));
+
+                await _context.SaveChangesAsync();
+                await transaksi.CommitAsync();
             }
             catch (DbUpdateException)
             {
+                await transaksi.RollbackAsync();
+
                 _context.Entry(pengguna).State =
                     EntityState.Detached;
 

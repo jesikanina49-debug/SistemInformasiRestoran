@@ -23,11 +23,22 @@ namespace SistemInformasiRestoran.Models
 
         public bool StatusTersedia { get; set; } = true;
 
-        // Menyimpan nama file gambar menu
         [StringLength(255)]
         public string? Gambar { get; set; }
 
         [ForeignKey(nameof(IdKategori))]
         public Kategori? Kategori { get; set; }
+
+        // Informasi pencatatan data
+        public int? InputBy { get; set; }
+
+        public DateTime InputDate { get; set; }
+
+        public int? UpdateBy { get; set; }
+
+        public DateTime? UpdateDate { get; set; }
+
+        // Penanda Soft Delete
+        public bool IsDeleted { get; set; } = false;
     }
 }

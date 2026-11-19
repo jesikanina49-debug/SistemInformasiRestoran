@@ -1,4 +1,6 @@
+
 using System.Globalization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -29,16 +31,38 @@ namespace SistemInformasiRestoran.Controllers
             _environment = environment;
         }
 
-        // Menampilkan daftar menu dan seluruh kategori.
+        // Membuat catatan Audit Trail.
+        private AuditTrail BuatAudit(
+            string aktivitas,
+            int idData,
+            string keterangan)
+        {
+            var idUser = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return new AuditTrail
+            {
+                IdUser = int.TryParse(idUser, out int hasil) ? hasil : null,
+                NamaUser = User.Identity?.Name ?? "SYSTEM",
+                Aktivitas = aktivitas,
+                NamaTabel = "menu",
+                IdData = idData,
+                Keterangan = keterangan,
+                TanggalAktivitas = DateTime.Now
+            };
+        }
+
+        // Menampilkan menu dan kategori aktif.
         public async Task<IActionResult> Index()
         {
             var daftarMenu = await _context.Menu
+                .Where(m => !m.IsDeleted)
                 .Include(m => m.Kategori)
                 .AsNoTracking()
                 .OrderBy(m => m.NamaMenu)
                 .ToListAsync();
 
             var daftarKategori = await _context.Kategori
+                .Where(k => !k.IsDeleted)
                 .AsNoTracking()
                 .OrderBy(k => k.NamaKategori)
                 .ToListAsync();
@@ -48,7 +72,7 @@ namespace SistemInformasiRestoran.Controllers
             return View(daftarMenu);
         }
 
-        // Menampilkan formulir tambah menu.
+        // Form tambah menu.
         [Authorize(Roles = "Manager")]
         [HttpGet]
         public async Task<IActionResult> Create()
@@ -57,23 +81,26 @@ namespace SistemInformasiRestoran.Controllers
             return View();
         }
 
-        // Menyimpan menu baru beserta gambar.
+        // Menyimpan menu baru dan Audit Trail dalam satu transaksi.
         [Authorize(Roles = "Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            Menu menu, IFormFile? fileGambar)
+            Menu menu,
+            IFormFile? fileGambar)
         {
             if (ModelState.IsValid)
             {
                 bool kategoriAda = await _context.Kategori
-                    .AnyAsync(k => k.IdKategori == menu.IdKategori);
+                    .AnyAsync(k =>
+                        k.IdKategori == menu.IdKategori &&
+                        !k.IsDeleted);
 
                 if (!kategoriAda)
                 {
                     ModelState.AddModelError(
                         nameof(menu.IdKategori),
-                        "Kategori yang dipilih tidak ditemukan.");
+                        "Kategori yang dipilih tidak ditemukan atau sudah dihapus.");
                 }
             }
 
@@ -85,25 +112,63 @@ namespace SistemInformasiRestoran.Controllers
                 return View(menu);
             }
 
-            if (fileGambar != null && fileGambar.Length > 0)
+            string? gambarDisimpan = null;
+
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync();
+
+            try
             {
-                menu.Gambar = await SimpanGambarAsync(fileGambar);
+                if (fileGambar != null && fileGambar.Length > 0)
+                {
+                    gambarDisimpan = await SimpanGambarAsync(fileGambar);
+                    menu.Gambar = gambarDisimpan;
+                }
+
+                menu.IsDeleted = false;
+
+                _context.Menu.Add(menu);
+                await _context.SaveChangesAsync();
+
+                _context.AuditTrail.Add(BuatAudit(
+                    "Tambah",
+                    menu.IdMenu,
+                    $"Menambahkan menu: {menu.NamaMenu}"
+                ));
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                TempData["SuccessMessage"] =
+                    "Menu berhasil ditambahkan.";
+
+                return RedirectToAction(nameof(Index));
             }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
 
-            _context.Menu.Add(menu);
-            await _context.SaveChangesAsync();
+                if (!string.IsNullOrEmpty(gambarDisimpan))
+                {
+                    HapusFileGambar(gambarDisimpan);
+                }
 
-            TempData["SuccessMessage"] = "Menu berhasil ditambahkan.";
+                TempData["ErrorMessage"] =
+                    "Menu gagal ditambahkan. Silakan periksa kembali data dan coba lagi.";
 
-            return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index));
+            }
         }
 
-        // Menampilkan formulir edit menu.
+        // Form edit menu.
         [Authorize(Roles = "Manager")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var menu = await _context.Menu.FindAsync(id);
+            var menu = await _context.Menu
+                .FirstOrDefaultAsync(m =>
+                    m.IdMenu == id && !m.IsDeleted);
 
             if (menu == null)
             {
@@ -115,7 +180,7 @@ namespace SistemInformasiRestoran.Controllers
             return View(menu);
         }
 
-        // Menyimpan perubahan menu dan gambar jika diganti.
+        // Menyimpan perubahan menu.
         [Authorize(Roles = "Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -130,11 +195,8 @@ namespace SistemInformasiRestoran.Controllers
                 return BadRequest();
             }
 
-            // Menghapus hasil binding otomatis untuk Harga.
-            // Harga akan dibaca dan dikonversi secara manual.
             ModelState.Remove(nameof(Menu.Harga));
 
-            // Membaca harga dengan format titik desimal.
             if (string.IsNullOrWhiteSpace(harga) ||
                 !decimal.TryParse(
                     harga,
@@ -160,13 +222,15 @@ namespace SistemInformasiRestoran.Controllers
             if (ModelState.IsValid)
             {
                 bool kategoriAda = await _context.Kategori
-                    .AnyAsync(k => k.IdKategori == menu.IdKategori);
+                    .AnyAsync(k =>
+                        k.IdKategori == menu.IdKategori &&
+                        !k.IsDeleted);
 
                 if (!kategoriAda)
                 {
                     ModelState.AddModelError(
                         nameof(menu.IdKategori),
-                        "Kategori yang dipilih tidak ditemukan.");
+                        "Kategori yang dipilih tidak ditemukan atau sudah dihapus.");
                 }
             }
 
@@ -178,12 +242,30 @@ namespace SistemInformasiRestoran.Controllers
                 return View(menu);
             }
 
-            var menuDatabase = await _context.Menu.FindAsync(id);
+            var menuDatabase = await _context.Menu
+                .FirstOrDefaultAsync(m =>
+                    m.IdMenu == id && !m.IsDeleted);
 
             if (menuDatabase == null)
             {
                 return NotFound();
             }
+
+            // Stok tidak boleh diubah saat masih ada reservasi.
+            bool adaReservasi = await _context.ReservasiStok
+                .AnyAsync(r => r.IdMenu == id);
+
+            if (adaReservasi && menu.Stok != menuDatabase.Stok)
+            {
+                ModelState.AddModelError(
+                    nameof(menu.Stok),
+                    "Stok tidak dapat diubah karena masih terdapat reservasi pada keranjang.");
+
+                await MuatKategoriAsync(menu.IdKategori);
+                return View(menu);
+            }
+
+            string namaLama = menuDatabase.NamaMenu;
 
             menuDatabase.NamaMenu = menu.NamaMenu;
             menuDatabase.IdKategori = menu.IdKategori;
@@ -202,6 +284,12 @@ namespace SistemInformasiRestoran.Controllers
 
             try
             {
+                _context.AuditTrail.Add(BuatAudit(
+                    "Ubah",
+                    menuDatabase.IdMenu,
+                    $"Memperbarui menu: {namaLama} menjadi {menuDatabase.NamaMenu}"
+                ));
+
                 await _context.SaveChangesAsync();
             }
             catch
@@ -214,29 +302,34 @@ namespace SistemInformasiRestoran.Controllers
                 throw;
             }
 
+            // Gambar lama dihapus setelah perubahan database berhasil.
             if (gambarBaru != null &&
                 !string.IsNullOrEmpty(gambarLama))
             {
                 HapusFileGambar(gambarLama);
             }
 
-            TempData["SuccessMessage"] = "Menu berhasil diperbarui.";
+            TempData["SuccessMessage"] =
+                "Menu berhasil diperbarui.";
 
             return RedirectToAction(nameof(Index));
         }
 
         // Mengaktifkan atau menonaktifkan menu.
-        // Data menu tidak dihapus permanen agar riwayat transaksi aman.
+        // Berbeda dengan Soft Delete.
         [Authorize(Roles = "Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var menu = await _context.Menu.FindAsync(id);
+            var menu = await _context.Menu
+                .FirstOrDefaultAsync(m =>
+                    m.IdMenu == id && !m.IsDeleted);
 
             if (menu == null)
             {
-                TempData["ErrorMessage"] = "Menu tidak ditemukan.";
+                TempData["ErrorMessage"] =
+                    "Menu tidak ditemukan.";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -244,6 +337,16 @@ namespace SistemInformasiRestoran.Controllers
             try
             {
                 menu.StatusTersedia = !menu.StatusTersedia;
+
+                string aktivitas = menu.StatusTersedia
+                    ? "Aktifkan"
+                    : "Nonaktifkan";
+
+                _context.AuditTrail.Add(BuatAudit(
+                    aktivitas,
+                    menu.IdMenu,
+                    $"{aktivitas} menu: {menu.NamaMenu}"
+                ));
 
                 await _context.SaveChangesAsync();
 
@@ -267,7 +370,73 @@ namespace SistemInformasiRestoran.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Memeriksa format dan ukuran gambar.
+        // Soft Delete menu.
+        [Authorize(Roles = "Manager")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SoftDelete(int id)
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var menu = await _context.Menu
+                    .FirstOrDefaultAsync(m =>
+                        m.IdMenu == id && !m.IsDeleted);
+
+                if (menu == null)
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData["ErrorMessage"] =
+                        "Menu tidak ditemukan.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Memeriksa reservasi yang masih tercatat.
+                bool adaReservasi = await _context.ReservasiStok
+                    .AnyAsync(r => r.IdMenu == id);
+
+                if (adaReservasi)
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData["ErrorMessage"] =
+                        $"Menu {menu.NamaMenu} tidak dapat dihapus karena masih memiliki reservasi stok. Selesaikan atau hapus menu dari keranjang terlebih dahulu.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                menu.IsDeleted = true;
+
+                _context.AuditTrail.Add(BuatAudit(
+                    "Soft Delete",
+                    menu.IdMenu,
+                    $"Menghapus menu secara logis: {menu.NamaMenu}"
+                ));
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                TempData["SuccessMessage"] =
+                    $"Menu {menu.NamaMenu} berhasil dihapus.";
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+
+                TempData["ErrorMessage"] =
+                    "Menu gagal dihapus. Silakan coba kembali.";
+
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // Validasi gambar.
         private bool ValidasiGambar(IFormFile? file)
         {
             if (file == null || file.Length == 0)
@@ -299,7 +468,7 @@ namespace SistemInformasiRestoran.Controllers
             return true;
         }
 
-        // Menyimpan gambar dengan nama file acak.
+        // Menyimpan gambar.
         private async Task<string> SimpanGambarAsync(IFormFile file)
         {
             string folder = Path.Combine(
@@ -324,7 +493,8 @@ namespace SistemInformasiRestoran.Controllers
             return namaFile;
         }
 
-        // Menghapus file gambar dari folder upload.
+        // Menghapus file gambar.
+        // Tidak dipanggil ketika Soft Delete.
         private void HapusFileGambar(string namaFile)
         {
             if (Path.GetFileName(namaFile) != namaFile)
@@ -345,10 +515,11 @@ namespace SistemInformasiRestoran.Controllers
             }
         }
 
-        // Mengambil kategori untuk formulir tambah dan edit.
+        // Memuat kategori aktif untuk formulir.
         private async Task MuatKategoriAsync(int? idTerpilih = null)
         {
             var kategori = await _context.Kategori
+                .Where(k => !k.IsDeleted)
                 .AsNoTracking()
                 .OrderBy(k => k.NamaKategori)
                 .ToListAsync();

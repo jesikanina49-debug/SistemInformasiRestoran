@@ -25,18 +25,43 @@ namespace SistemInformasiRestoran.Controllers
             _reservasiStokService = reservasiStokService;
         }
 
+        // Membuat catatan Audit Trail.
+        private AuditTrail BuatAudit(
+            string aktivitas,
+            int idPesanan,
+            string keterangan,
+            int idUser)
+        {
+            return new AuditTrail
+            {
+                IdUser = idUser,
+                NamaUser = User.Identity?.Name ?? "SYSTEM",
+                Aktivitas = aktivitas,
+                NamaTabel = "pesanan",
+                IdData = idPesanan,
+                Keterangan = keterangan,
+                TanggalAktivitas = DateTime.Now
+            };
+        }
+
         // Menampilkan daftar meja, menu tersedia, dan keranjang.
         public async Task<IActionResult> Index(int? idMeja)
         {
             var viewModel = new PemesananViewModel
             {
                 DaftarMeja = await _context.Meja
+                    .Where(m => !m.IsDeleted)
                     .OrderBy(m => m.NomorMeja)
                     .ToListAsync(),
 
                 DaftarMenu = await _context.Menu
                     .Include(m => m.Kategori)
-                    .Where(m => m.StatusTersedia && m.Stok > 0)
+                    .Where(m =>
+                        !m.IsDeleted &&
+                        m.Kategori != null &&
+                        !m.Kategori.IsDeleted &&
+                        m.StatusTersedia &&
+                        m.Stok > 0)
                     .OrderBy(m => m.NamaMenu)
                     .ToListAsync()
             };
@@ -44,7 +69,9 @@ namespace SistemInformasiRestoran.Controllers
             if (idMeja.HasValue)
             {
                 viewModel.MejaDipilih = await _context.Meja
-                    .FirstOrDefaultAsync(m => m.IdMeja == idMeja.Value);
+                    .FirstOrDefaultAsync(m =>
+                        m.IdMeja == idMeja.Value &&
+                        !m.IsDeleted);
 
                 if (viewModel.MejaDipilih == null)
                 {
@@ -74,7 +101,10 @@ namespace SistemInformasiRestoran.Controllers
                     "Jumlah pesanan minimal 1.", idMeja);
             }
 
-            var meja = await _context.Meja.FindAsync(idMeja);
+            var meja = await _context.Meja
+                .FirstOrDefaultAsync(m =>
+                    m.IdMeja == idMeja &&
+                    !m.IsDeleted);
 
             if (meja == null ||
                 (meja.StatusMeja != "Tersedia" &&
@@ -84,9 +114,16 @@ namespace SistemInformasiRestoran.Controllers
                     "Meja tidak dapat digunakan.", idMeja);
             }
 
-            var menu = await _context.Menu.FindAsync(idMenu);
+            var menu = await _context.Menu
+                .Include(m => m.Kategori)
+                .FirstOrDefaultAsync(m =>
+                    m.IdMenu == idMenu &&
+                    !m.IsDeleted);
 
-            if (menu == null || !menu.StatusTersedia)
+            if (menu == null ||
+                !menu.StatusTersedia ||
+                menu.Kategori == null ||
+                menu.Kategori.IsDeleted)
             {
                 return GagalAtauRedirect(
                     "Menu tidak tersedia atau sudah dinonaktifkan.",
@@ -183,7 +220,8 @@ namespace SistemInformasiRestoran.Controllers
                     "Menu tidak ditemukan di keranjang.", idMeja);
             }
 
-            var menu = await _context.Menu.FindAsync(idMenu);
+            var menu = await _context.Menu
+                .FirstOrDefaultAsync(m => m.IdMenu == idMenu);
 
             if (menu == null)
             {
@@ -191,6 +229,8 @@ namespace SistemInformasiRestoran.Controllers
                     "Data menu tidak ditemukan.", idMeja);
             }
 
+            // Jika jumlah nol atau kurang, menu boleh dihapus
+            // agar stok reservasi bisa dikembalikan.
             if (jumlah <= 0)
             {
                 var hasilHapus =
@@ -233,6 +273,13 @@ namespace SistemInformasiRestoran.Controllers
                     "Menu dihapus dan stok berhasil dikembalikan.";
 
                 return RedirectToAction(nameof(Index), new { idMeja });
+            }
+
+            // Menu yang sudah Soft Delete tidak boleh ditambah jumlahnya.
+            if (menu.IsDeleted || !menu.StatusTersedia)
+            {
+                return GagalAtauRedirect(
+                    "Menu sudah tidak tersedia untuk dipesan.", idMeja);
             }
 
             var hasilReservasi =
@@ -357,7 +404,9 @@ namespace SistemInformasiRestoran.Controllers
             try
             {
                 var meja = await _context.Meja
-                    .FirstOrDefaultAsync(m => m.IdMeja == idMeja);
+                    .FirstOrDefaultAsync(m =>
+                        m.IdMeja == idMeja &&
+                        !m.IsDeleted);
 
                 if (meja == null)
                 {
@@ -409,7 +458,12 @@ namespace SistemInformasiRestoran.Controllers
                     .ToList();
 
                 var daftarMenu = await _context.Menu
-                    .Where(m => idMenuList.Contains(m.IdMenu))
+                    .Include(m => m.Kategori)
+                    .Where(m =>
+                        idMenuList.Contains(m.IdMenu) &&
+                        !m.IsDeleted &&
+                        m.Kategori != null &&
+                        !m.Kategori.IsDeleted)
                     .ToListAsync();
 
                 foreach (var item in keranjang)
@@ -433,7 +487,9 @@ namespace SistemInformasiRestoran.Controllers
                         p.IdMeja == idMeja &&
                         p.StatusPesanan == "Diproses");
 
-                if (pesanan == null)
+                bool pesananBaru = pesanan == null;
+
+                if (pesananBaru)
                 {
                     pesanan = new Pesanan
                     {
@@ -455,14 +511,14 @@ namespace SistemInformasiRestoran.Controllers
 
                     var detail = await _context.DetailPesanan
                         .FirstOrDefaultAsync(d =>
-                            d.IdPesanan == pesanan.IdPesanan &&
+                            d.IdPesanan == pesanan!.IdPesanan &&
                             d.IdMenu == menu.IdMenu);
 
                     if (detail == null)
                     {
                         detail = new DetailPesanan
                         {
-                            IdPesanan = pesanan.IdPesanan,
+                            IdPesanan = pesanan!.IdPesanan,
                             IdMenu = menu.IdMenu,
                             Jumlah = item.Jumlah,
                             HargaSatuan = menu.Harga,
@@ -482,7 +538,7 @@ namespace SistemInformasiRestoran.Controllers
 
                 await _context.SaveChangesAsync();
 
-                pesanan.Total = await _context.DetailPesanan
+                pesanan!.Total = await _context.DetailPesanan
                     .Where(d => d.IdPesanan == pesanan.IdPesanan)
                     .SumAsync(d => (decimal?)d.Subtotal) ?? 0;
 
@@ -493,6 +549,15 @@ namespace SistemInformasiRestoran.Controllers
                 }
 
                 _context.ReservasiStok.RemoveRange(daftarReservasi);
+
+                _context.AuditTrail.Add(BuatAudit(
+                    pesananBaru ? "Buat Pesanan" : "Tambah Menu Pesanan",
+                    pesanan.IdPesanan,
+                    pesananBaru
+                        ? $"Membuat pesanan baru untuk meja {meja.NomorMeja}. Total sementara Rp{pesanan.Total:N0}."
+                        : $"Menambahkan menu ke pesanan meja {meja.NomorMeja}. Total sementara Rp{pesanan.Total:N0}.",
+                    idUser
+                ));
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

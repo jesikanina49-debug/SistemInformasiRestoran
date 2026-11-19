@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="utf-8" />
@@ -149,7 +150,6 @@
             scroll-behavior: smooth;
         }
 
-        /* HEADER TETAP DI ATAS SAAT DI-SCROLL */
         .resto-topbar {
             position: sticky;
             top: 0;
@@ -264,10 +264,6 @@
         .resto-toast .btn-close {
             flex-shrink: 0;
             margin-right: 12px;
-        }
-
-        .resto-mobile-brand {
-            display: none;
         }
 
         @@media (max-width: 850px) {
@@ -458,6 +454,18 @@
                     </a>
                 }
 
+                <!-- 9. AUDIT TRAIL: KHUSUS MANAGER -->
+                @if (User.IsInRole("Manager"))
+                {
+                    <a asp-controller="AuditTrail"
+                       asp-action="Index"
+                       class="resto-nav-link @(currentController == "AuditTrail" ? "active" : "")">
+
+                        <i class="bi bi-clock-history"></i>
+                        <span>Audit Trail</span>
+                    </a>
+                }
+
             </nav>
 
             <div class="resto-sidebar-bottom">
@@ -518,7 +526,9 @@
 
                 </div>
 
-            </header>            <main class="resto-content">
+            </header>
+
+            <main class="resto-content">
                 @RenderBody()
             </main>
 
