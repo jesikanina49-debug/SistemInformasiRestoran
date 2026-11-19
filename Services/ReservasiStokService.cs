@@ -1,4 +1,6 @@
 
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SistemInformasiRestoran.Data;
 using SistemInformasiRestoran.Models;
@@ -8,15 +10,45 @@ namespace SistemInformasiRestoran.Services
     public class ReservasiStokService
     {
         private readonly RestoDbContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ReservasiStokService(RestoDbContext context)
+        public ReservasiStokService(
+            RestoDbContext context,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // Batas waktu reservasi keranjang.
         public static readonly TimeSpan BatasWaktu =
             TimeSpan.FromMinutes(30);
+
+        // Membuat catatan Audit Trail untuk perubahan stok oleh pengguna.
+        private AuditTrail BuatAuditStok(
+            int idMenu,
+            string aktivitas,
+            string keterangan)
+        {
+            var pengguna = _httpContextAccessor.HttpContext?.User;
+
+            var idUser = pengguna?
+                .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            return new AuditTrail
+            {
+                IdUser = int.TryParse(idUser, out int hasil)
+                    ? hasil
+                    : null,
+
+                NamaUser = pengguna?.Identity?.Name ?? "SYSTEM",
+                Aktivitas = aktivitas,
+                NamaTabel = "menu",
+                IdData = idMenu,
+                Keterangan = keterangan,
+                TanggalAktivitas = DateTime.Now
+            };
+        }
 
         // Menyesuaikan jumlah reservasi stok.
         public async Task<(bool Berhasil, string Pesan)> AturJumlahAsync(
@@ -53,9 +85,15 @@ namespace SistemInformasiRestoran.Services
                 int jumlahLama = reservasi?.Jumlah ?? 0;
                 int selisih = jumlahBaru - jumlahLama;
 
-                // Jika jumlah bertambah, kurangi stok.
+                // Jika jumlah bertambah, periksa status menu dan stok.
                 if (selisih > 0)
                 {
+                    if (menu.IsDeleted)
+                    {
+                        await transaction.RollbackAsync();
+                        return (false, "Menu sudah dihapus dan tidak dapat dipesan.");
+                    }
+
                     if (!menu.StatusTersedia)
                     {
                         await transaction.RollbackAsync();
@@ -96,16 +134,30 @@ namespace SistemInformasiRestoran.Services
                         reservasi.WaktuKedaluwarsa =
                             DateTime.Now.Add(BatasWaktu);
                     }
+
+                    _context.AuditTrail.Add(BuatAuditStok(
+                        menu.IdMenu,
+                        "Reservasi Stok",
+                        $"Stok {menu.NamaMenu} dikurangi sebanyak {selisih} untuk reservasi meja {idMeja}."
+                    ));
                 }
                 // Jika jumlah berkurang, kembalikan stok.
                 else if (selisih < 0)
                 {
-                    menu.Stok += Math.Abs(selisih);
+                    int jumlahDikembalikan = Math.Abs(selisih);
+
+                    menu.Stok += jumlahDikembalikan;
 
                     if (reservasi != null)
                     {
                         reservasi.Jumlah = jumlahBaru;
                     }
+
+                    _context.AuditTrail.Add(BuatAuditStok(
+                        menu.IdMenu,
+                        "Pengembalian Stok",
+                        $"Stok {menu.NamaMenu} dikembalikan sebanyak {jumlahDikembalikan} karena jumlah reservasi meja {idMeja} dikurangi."
+                    ));
                 }
 
                 // Jika jumlah menjadi nol, hapus reservasi.
@@ -176,18 +228,35 @@ namespace SistemInformasiRestoran.Services
 
                     if (menu != null)
                     {
-                        menu.Stok += kelompok.Sum(r => r.Jumlah);
+                        int jumlahDikembalikan =
+                            kelompok.Sum(r => r.Jumlah);
+
+                        menu.Stok += jumlahDikembalikan;
+
+                        // Aktivitas otomatis dicatat sebagai SYSTEM.
+                        _context.AuditTrail.Add(new AuditTrail
+                        {
+                            IdUser = null,
+                            NamaUser = "SYSTEM",
+                            Aktivitas = "Pengembalian Stok",
+                            NamaTabel = "menu",
+                            IdData = menu.IdMenu,
+                            Keterangan =
+                                $"Stok {menu.NamaMenu} dikembalikan sebanyak {jumlahDikembalikan} karena reservasi kedaluwarsa.",
+                            TanggalAktivitas = DateTime.Now
+                        });
                     }
                 }
 
-                int jumlahDikembalikan = daftarReservasi.Count;
+                int jumlahDikembalikanReservasi =
+                    daftarReservasi.Count;
 
                 _context.ReservasiStok.RemoveRange(daftarReservasi);
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return jumlahDikembalikan;
+                return jumlahDikembalikanReservasi;
             }
             catch
             {

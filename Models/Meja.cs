@@ -23,5 +23,17 @@ namespace SistemInformasiRestoran.Models
         public int JumlahKursi { get; set; } = 4;
 
         public DateTime? MulaiDigunakan { get; set; }
+
+        // Informasi pencatatan data
+        public int? InputBy { get; set; }
+
+        public DateTime InputDate { get; set; }
+
+        public int? UpdateBy { get; set; }
+
+        public DateTime? UpdateDate { get; set; }
+
+        // Penanda Soft Delete
+        public bool IsDeleted { get; set; } = false;
     }
 }

@@ -1,4 +1,5 @@
 
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,10 +18,31 @@ namespace SistemInformasiRestoran.Controllers
             _context = context;
         }
 
-        // Menampilkan seluruh data meja.
+        // Membuat catatan Audit Trail.
+        private AuditTrail BuatAudit(
+            string aktivitas,
+            int idData,
+            string keterangan)
+        {
+            var idUser = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return new AuditTrail
+            {
+                IdUser = int.TryParse(idUser, out int hasil) ? hasil : null,
+                NamaUser = User.Identity?.Name ?? "SYSTEM",
+                Aktivitas = aktivitas,
+                NamaTabel = "meja",
+                IdData = idData,
+                Keterangan = keterangan,
+                TanggalAktivitas = DateTime.Now
+            };
+        }
+
+        // Menampilkan meja yang masih aktif.
         public async Task<IActionResult> Index()
         {
             var daftarMeja = await _context.Meja
+                .Where(m => !m.IsDeleted)
                 .AsNoTracking()
                 .OrderBy(m => m.NomorMeja)
                 .ToListAsync();
@@ -28,7 +50,7 @@ namespace SistemInformasiRestoran.Controllers
             return View(daftarMeja);
         }
 
-        // Menampilkan formulir tambah meja.
+        // Form tambah meja.
         [Authorize(Roles = "Manager")]
         [HttpGet]
         public IActionResult Create()
@@ -44,10 +66,11 @@ namespace SistemInformasiRestoran.Controllers
         {
             meja.NomorMeja = meja.NomorMeja?.Trim() ?? "";
 
-            // Status meja baru selalu Tersedia.
             meja.StatusMeja = "Tersedia";
             meja.MulaiDigunakan = null;
+            meja.IsDeleted = false;
 
+            // Nomor meja yang pernah digunakan tidak boleh dipakai ulang.
             bool nomorSudahAda = await _context.Meja
                 .AnyAsync(m => m.NomorMeja == meja.NomorMeja);
 
@@ -63,21 +86,45 @@ namespace SistemInformasiRestoran.Controllers
                 return View(meja);
             }
 
-            _context.Meja.Add(meja);
-            await _context.SaveChangesAsync();
+            await using var transaksi =
+                await _context.Database.BeginTransactionAsync();
 
-            TempData["SuccessMessage"] =
-                "Meja berhasil ditambahkan.";
+            try
+            {
+                _context.Meja.Add(meja);
+                await _context.SaveChangesAsync();
+
+                _context.AuditTrail.Add(BuatAudit(
+                    "Tambah",
+                    meja.IdMeja,
+                    $"Menambahkan meja: {meja.NomorMeja}"
+                ));
+
+                await _context.SaveChangesAsync();
+                await transaksi.CommitAsync();
+
+                TempData["SuccessMessage"] =
+                    "Meja berhasil ditambahkan.";
+            }
+            catch (Exception)
+            {
+                await transaksi.RollbackAsync();
+
+                TempData["ErrorMessage"] =
+                    "Meja gagal ditambahkan. Silakan periksa kembali data.";
+            }
 
             return RedirectToAction(nameof(Index));
         }
 
-        // Menampilkan formulir edit meja.
+        // Form edit meja.
         [Authorize(Roles = "Manager")]
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var meja = await _context.Meja.FindAsync(id);
+            var meja = await _context.Meja
+                .FirstOrDefaultAsync(m =>
+                    m.IdMeja == id && !m.IsDeleted);
 
             if (meja == null)
             {
@@ -87,7 +134,7 @@ namespace SistemInformasiRestoran.Controllers
             return View(meja);
         }
 
-        // Menyimpan perubahan data meja.
+        // Menyimpan perubahan meja.
         [Authorize(Roles = "Manager")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -112,7 +159,9 @@ namespace SistemInformasiRestoran.Controllers
                     "Nomor meja sudah digunakan.");
             }
 
-            var mejaDatabase = await _context.Meja.FindAsync(id);
+            var mejaDatabase = await _context.Meja
+                .FirstOrDefaultAsync(m =>
+                    m.IdMeja == id && !m.IsDeleted);
 
             if (mejaDatabase == null)
             {
@@ -126,62 +175,100 @@ namespace SistemInformasiRestoran.Controllers
                 return View(meja);
             }
 
-            // Hanya nomor meja dan jumlah kursi yang bisa diubah.
-            // Status dan waktu penggunaan tetap mengikuti transaksi.
+            string nomorLama = mejaDatabase.NomorMeja;
+
             mejaDatabase.NomorMeja = meja.NomorMeja;
             mejaDatabase.JumlahKursi = meja.JumlahKursi;
 
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] =
-                "Data meja berhasil diperbarui.";
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Menghapus data meja.
-        [Authorize(Roles = "Manager")]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var meja = await _context.Meja.FindAsync(id);
-
-            if (meja == null)
-            {
-                TempData["ErrorMessage"] =
-                    "Data meja tidak ditemukan.";
-
-                return RedirectToAction(nameof(Index));
-            }
-
-            bool adaPesananBelumDibayar = await _context.Pesanan
-                .AnyAsync(p =>
-                    p.IdMeja == id &&
-                    p.StatusPesanan == "Diproses");
-
-            if (meja.StatusMeja == "Digunakan" ||
-                adaPesananBelumDibayar)
-            {
-                TempData["ErrorMessage"] =
-                    "Meja tidak dapat dihapus karena sedang digunakan atau masih memiliki pesanan yang belum dibayar.";
-
-                return RedirectToAction(nameof(Index));
-            }
-
-            _context.Meja.Remove(meja);
+            _context.AuditTrail.Add(BuatAudit(
+                "Ubah",
+                mejaDatabase.IdMeja,
+                $"Mengubah meja {nomorLama} menjadi {mejaDatabase.NomorMeja}"
+            ));
 
             try
             {
                 await _context.SaveChangesAsync();
 
                 TempData["SuccessMessage"] =
-                    "Data meja berhasil dihapus.";
+                    "Data meja berhasil diperbarui.";
             }
             catch (DbUpdateException)
             {
                 TempData["ErrorMessage"] =
-                    "Meja tidak dapat dihapus karena sudah digunakan dalam transaksi.";
+                    "Data meja gagal diperbarui. Silakan periksa kembali.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Soft Delete meja.
+        [Authorize(Roles = "Manager")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await using var transaksi =
+                await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var meja = await _context.Meja
+                    .FirstOrDefaultAsync(m =>
+                        m.IdMeja == id && !m.IsDeleted);
+
+                if (meja == null)
+                {
+                    await transaksi.RollbackAsync();
+
+                    TempData["ErrorMessage"] =
+                        "Data meja tidak ditemukan.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                bool adaPesananBelumDibayar =
+                    await _context.Pesanan.AnyAsync(p =>
+                        p.IdMeja == id &&
+                        p.StatusPesanan == "Diproses");
+
+                bool adaReservasiAktif =
+                    await _context.ReservasiStok.AnyAsync(r =>
+                        r.IdMeja == id &&
+                        r.WaktuKedaluwarsa > DateTime.Now);
+
+                if (meja.StatusMeja == "Digunakan" ||
+                    adaPesananBelumDibayar ||
+                    adaReservasiAktif)
+                {
+                    await transaksi.RollbackAsync();
+
+                    TempData["ErrorMessage"] =
+                        "Meja tidak dapat dihapus karena sedang digunakan, memiliki pesanan belum dibayar, atau masih memiliki reservasi stok aktif.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                meja.IsDeleted = true;
+
+                _context.AuditTrail.Add(BuatAudit(
+                    "Soft Delete",
+                    meja.IdMeja,
+                    $"Menghapus meja secara logis: {meja.NomorMeja}"
+                ));
+
+                await _context.SaveChangesAsync();
+                await transaksi.CommitAsync();
+
+                TempData["SuccessMessage"] =
+                    "Data meja berhasil dihapus.";
+            }
+            catch (Exception)
+            {
+                await transaksi.RollbackAsync();
+
+                TempData["ErrorMessage"] =
+                    "Data meja gagal dihapus. Silakan coba kembali.";
             }
 
             return RedirectToAction(nameof(Index));

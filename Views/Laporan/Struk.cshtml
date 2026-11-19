@@ -4,6 +4,9 @@
 @{
     ViewData["Title"] = "Struk Pembayaran";
 
+    var budayaRupiah =
+        System.Globalization.CultureInfo.GetCultureInfo("id-ID");
+
     var detailPesanan =
         ViewBag.DetailPesanan as List<SistemInformasiRestoran.Models.DetailPesanan>
         ?? new List<SistemInformasiRestoran.Models.DetailPesanan>();
@@ -44,6 +47,10 @@
         gap: 12px;
     }
 
+    .struk-info strong {
+        text-align: right;
+    }
+
     .struk-table {
         width: 100%;
         font-size: 13px;
@@ -53,6 +60,7 @@
     .struk-table th,
     .struk-table td {
         padding: 7px 3px;
+        vertical-align: top;
     }
 
     .struk-total {
@@ -66,6 +74,10 @@
         justify-content: space-between;
         margin-bottom: 8px;
         gap: 12px;
+    }
+
+    .struk-total strong {
+        text-align: right;
     }
 
     .struk-footer {
@@ -180,23 +192,34 @@
             </thead>
 
             <tbody>
-                @foreach (var detail in detailPesanan)
+                @if (detailPesanan.Any())
+                {
+                    @foreach (var detail in detailPesanan)
+                    {
+                        <tr>
+                            <td>
+                                @(detail.Menu?.NamaMenu ?? "-")
+                                <br />
+                                <small>
+                                    Rp @detail.HargaSatuan.ToString("N0", budayaRupiah)
+                                </small>
+                            </td>
+
+                            <td class="text-center">
+                                @detail.Jumlah
+                            </td>
+
+                            <td class="text-end">
+                                Rp @detail.Subtotal.ToString("N0", budayaRupiah)
+                            </td>
+                        </tr>
+                    }
+                }
+                else
                 {
                     <tr>
-                        <td>
-                            @(detail.Menu?.NamaMenu ?? "-")
-                            <br />
-                            <small>
-                                Rp @detail.HargaSatuan.ToString("N0")
-                            </small>
-                        </td>
-
-                        <td class="text-center">
-                            @detail.Jumlah
-                        </td>
-
-                        <td class="text-end">
-                            Rp @detail.Subtotal.ToString("N0")
+                        <td colspan="3" class="text-center">
+                            Detail pesanan tidak tersedia.
                         </td>
                     </tr>
                 }
@@ -207,7 +230,7 @@
             <div>
                 <strong>Total</strong>
                 <strong>
-                    Rp @Model.TotalBayar.ToString("N0")
+                    Rp @Model.TotalBayar.ToString("N0", budayaRupiah)
                 </strong>
             </div>
 
@@ -219,14 +242,14 @@
             <div>
                 <span>Uang Diterima</span>
                 <strong>
-                    Rp @Model.UangDiterima.ToString("N0")
+                    Rp @Model.UangDiterima.ToString("N0", budayaRupiah)
                 </strong>
             </div>
 
             <div>
                 <span>Kembalian</span>
                 <strong>
-                    Rp @Model.Kembalian.ToString("N0")
+                    Rp @Model.Kembalian.ToString("N0", budayaRupiah)
                 </strong>
             </div>
         </div>

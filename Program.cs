@@ -10,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
+// Mengakses informasi pengguna yang sedang login.
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped<IPasswordHasher<Pengguna>, PasswordHasher<Pengguna>>();
 
 builder.Services.AddDistributedMemoryCache();
@@ -36,10 +39,10 @@ builder.Services.AddDbContext<RestoDbContext>(options =>
     )
 );
 
-// Service reservasi stok
+// Service reservasi stok.
 builder.Services.AddScoped<ReservasiStokService>();
 
-// Service otomatis mengembalikan stok setelah reservasi kedaluwarsa
+// Service otomatis mengembalikan stok setelah reservasi kedaluwarsa.
 builder.Services.AddHostedService<ReservasiStokBackgroundService>();
 
 var app = builder.Build();

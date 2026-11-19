@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SistemInformasiRestoran.Data;
-using SistemInformasiRestoran.Models;
 using SistemInformasiRestoran.Models.ViewModels;
 
 namespace SistemInformasiRestoran.Controllers
@@ -45,36 +44,40 @@ namespace SistemInformasiRestoran.Controllers
                 TanggalAkhir = akhir
             };
 
-            // Mengambil ID pesanan yang sudah dibayar.
-            var pesananDibayar = _context.Pembayaran
-                .Select(p => p.IdPesanan);
-
             // LAPORAN MENU TERLARIS
-            viewModel.MenuTerlaris = await _context.DetailPesanan
-                .AsNoTracking()
-                .Where(d =>
-                    pesananDibayar.Contains(d.IdPesanan) &&
-                    d.Pesanan != null &&
-                    d.Pesanan.StatusPesanan == "Selesai" &&
-                    d.Pesanan.TanggalPesanan >= mulai &&
-                    d.Pesanan.TanggalPesanan < batasAkhir &&
-                    d.Menu != null)
-                .GroupBy(d => new
-                {
-                    d.IdMenu,
-                    d.Menu!.NamaMenu
-                })
-                .Select(g => new MenuTerlarisViewModel
-                {
-                    IdMenu = g.Key.IdMenu,
-                    NamaMenu = g.Key.NamaMenu,
-                    TotalTerjual = g.Sum(d => d.Jumlah),
-                    TotalPendapatan = g.Sum(d => d.Subtotal)
-                })
+            // Periode menggunakan tanggal pembayaran.
+            // Menu yang sudah Soft Delete tetap masuk laporan historis.
+            viewModel.MenuTerlaris =
+                await (
+                    from detail in _context.DetailPesanan.AsNoTracking()
+                    join pembayaran in _context.Pembayaran.AsNoTracking()
+                        on detail.IdPesanan equals pembayaran.IdPesanan
+                    join pesanan in _context.Pesanan.AsNoTracking()
+                        on detail.IdPesanan equals pesanan.IdPesanan
+                    join menu in _context.Menu.AsNoTracking()
+                        on detail.IdMenu equals menu.IdMenu
+                    where pembayaran.TanggalPembayaran >= mulai
+                        && pembayaran.TanggalPembayaran < batasAkhir
+                        && pesanan.StatusPesanan == "Selesai"
+                    group detail by new
+                    {
+                        detail.IdMenu,
+                        menu.NamaMenu
+                    }
+                    into kelompok
+                    select new MenuTerlarisViewModel
+                    {
+                        IdMenu = kelompok.Key.IdMenu,
+                        NamaMenu = kelompok.Key.NamaMenu,
+                        TotalTerjual = kelompok.Sum(d => d.Jumlah),
+                        TotalPendapatan = kelompok.Sum(d => d.Subtotal)
+                    }
+                )
                 .OrderByDescending(m => m.TotalTerjual)
                 .ToListAsync();
 
             // LAPORAN OMZET HARIAN
+            // Sumber omzet adalah data pembayaran.
             var daftarPembayaran = await _context.Pembayaran
                 .AsNoTracking()
                 .Where(p =>
@@ -97,6 +100,7 @@ namespace SistemInformasiRestoran.Controllers
                 .Sum(p => p.TotalBayar);
 
             // RIWAYAT PEMBAYARAN
+            // Tetap menampilkan transaksi historis.
             viewModel.RiwayatPembayaran = await _context.Pembayaran
                 .AsNoTracking()
                 .Include(p => p.Pesanan)
@@ -117,7 +121,8 @@ namespace SistemInformasiRestoran.Controllers
                 .AsNoTracking()
                 .Include(p => p.Pesanan)
                     .ThenInclude(p => p!.Meja)
-                .FirstOrDefaultAsync(p => p.IdPembayaran == id);
+                .FirstOrDefaultAsync(p =>
+                    p.IdPembayaran == id);
 
             if (pembayaran == null)
             {
@@ -127,6 +132,8 @@ namespace SistemInformasiRestoran.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // Detail tetap menampilkan menu historis,
+            // termasuk menu yang sudah Soft Delete.
             var detailPesanan = await _context.DetailPesanan
                 .AsNoTracking()
                 .Include(d => d.Menu)

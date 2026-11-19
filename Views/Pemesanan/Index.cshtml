@@ -147,7 +147,7 @@
                                               method="post"
                                               class="mt-auto js-add-form"
                                               data-nama-menu="@menu.NamaMenu"
-                                              data-harga-menu="@menu.Harga">
+                                              data-harga-menu="@menu.Harga.ToString(System.Globalization.CultureInfo.InvariantCulture)">
 
                                             @Html.AntiForgeryToken()
 

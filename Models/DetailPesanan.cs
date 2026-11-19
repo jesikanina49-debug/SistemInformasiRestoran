@@ -27,5 +27,14 @@ namespace SistemInformasiRestoran.Models
 
         [ForeignKey(nameof(IdMenu))]
         public Menu? Menu { get; set; }
+
+        // Informasi pencatatan data
+        public int? InputBy { get; set; }
+
+        public DateTime InputDate { get; set; }
+
+        public int? UpdateBy { get; set; }
+
+        public DateTime? UpdateDate { get; set; }
     }
 }

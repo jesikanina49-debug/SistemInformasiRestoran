@@ -27,43 +27,43 @@ namespace SistemInformasiRestoran.Controllers
 
             var viewModel = new DashboardViewModel
             {
-                // Total menu
+                // Total menu aktif (tidak termasuk Soft Delete).
                 TotalMenu = await _context.Menu
-                    .CountAsync(),
+                    .CountAsync(m => !m.IsDeleted),
 
-                // Total meja
+                // Total meja aktif (tidak termasuk Soft Delete).
                 TotalMeja = await _context.Meja
-                    .CountAsync(),
+                    .CountAsync(m => !m.IsDeleted),
 
-                // Pesanan hari ini
+                // Pesanan hari ini.
                 PesananHariIni = await _context.Pesanan
                     .CountAsync(p =>
                         p.TanggalPesanan >= hariIni &&
                         p.TanggalPesanan < besok),
 
-                // Pendapatan hari ini
+                // Pendapatan hari ini.
                 PendapatanHariIni = await _context.Pembayaran
                     .Where(p =>
                         p.TanggalPembayaran >= hariIni &&
                         p.TanggalPembayaran < besok)
                     .SumAsync(p => (decimal?)p.TotalBayar) ?? 0,
 
-                // Total seluruh pendapatan
+                // Total seluruh pendapatan.
                 TotalPendapatan = await _context.Pembayaran
                     .SumAsync(p => (decimal?)p.TotalBayar) ?? 0,
 
-                // Jumlah transaksi pembayaran
+                // Jumlah transaksi pembayaran.
                 TotalTransaksi = await _context.Pembayaran
                     .CountAsync(),
 
-                // Jumlah seluruh menu yang sudah dibayar
+                // Jumlah menu yang sudah terjual dan dibayar.
                 MenuTerjual = await _context.DetailPesanan
                     .Where(d => _context.Pembayaran
                         .Any(p => p.IdPesanan == d.IdPesanan))
                     .SumAsync(d => (int?)d.Jumlah) ?? 0
             };
 
-            // Data omzet selama 7 hari terakhir
+            // Data omzet selama 7 hari terakhir.
             var pembayaranTujuhHari = await _context.Pembayaran
                 .AsNoTracking()
                 .Where(p =>
@@ -93,7 +93,8 @@ namespace SistemInformasiRestoran.Controllers
                 })
                 .ToList();
 
-            // Lima pembayaran terbaru
+            // Lima pembayaran terbaru.
+            // Riwayat tetap ditampilkan meskipun meja sudah Soft Delete.
             viewModel.AktivitasTerbaru = await _context.Pembayaran
                 .AsNoTracking()
                 .Include(p => p.Pesanan)
